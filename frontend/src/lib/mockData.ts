@@ -1,5 +1,15 @@
 import { Artist, Album, Track } from './types';
 
+// Detalhe do álbum (p/ página /albums/[id])
+export interface AlbumDetail extends Album {
+  label?: string;
+  genres?: string[];
+  year?: number;
+  description?: string;
+  youtubeUrl?: string;
+  tracks: Array<Track & { trackNumber?: number }>; // ordem de faixas
+}
+
 export interface GenreHighlight {
   id: string;
   name: string;
@@ -47,4 +57,38 @@ export function formatFollowers(n?: number) {
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
   if (n >= 1_000) return (n / 1_000).toFixed(1).replace(/\.0$/, '') + 'K';
   return n.toString();
+}
+
+export const mockAlbumDetails: Record<string, AlbumDetail> = {
+  al1: {
+    id: 'al1',
+    name: '333',
+    image: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=600&q=60',
+    artists: [{ id: 'a1', name: 'Matue' }],
+    releaseDate: '2024-05-01',
+    totalTracks: 12,
+    label: 'Indie Records',
+    genres: ['Trap'],
+    year: 2024,
+    description: 'Álbum equilibrado e dinâmico com momentos introspectivos.',
+    youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    tracks: [
+      { id: 't101', name: 'Crack com Mussilon', durationMs: 176000, artists: [{ id: 'a1', name: 'Matue' }], trackNumber: 1 },
+      { id: 't102', name: 'Imagina esse Cenário', durationMs: 182000, artists: [{ id: 'a1', name: 'Matue' }], trackNumber: 2 },
+      { id: 't103', name: 'Isso é Sério', durationMs: 192000, artists: [{ id: 'a1', name: 'Matue' }], trackNumber: 3 },
+      { id: 't104', name: '1993', durationMs: 168000, artists: [{ id: 'a1', name: 'Matue' }], trackNumber: 4 },
+      { id: 't105', name: '4Tal', durationMs: 174000, artists: [{ id: 'a1', name: 'Matue' }], trackNumber: 5 }
+    ]
+  }
+};
+
+export function getMockAlbumDetail(id: string): AlbumDetail | null {
+  return mockAlbumDetails[id] ?? null;
+}
+
+export function msToTime(ms?: number) {
+  if (!ms) return '0:00';
+  const m = Math.floor(ms / 60000);
+  const s = Math.floor((ms % 60000) / 1000).toString().padStart(2, '0');
+  return `${m}:${s}`;
 }
