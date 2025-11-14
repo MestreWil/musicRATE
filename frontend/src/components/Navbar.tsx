@@ -96,10 +96,15 @@ export function Navbar() {
 
           {/* Usuário / Avatar */}
           <div className="flex items-center gap-2">
-            <button className="flex items-center gap-2 group">
-              <div className="w-8 h-8 rounded-full bg-neutral-300 text-neutral-700 grid place-items-center text-xs">ME</div>
+            {/* FUTURO: trocar /profile por /login se não autenticado; pegar displayName e avatar reais da API */}
+            <Link href="/profile" aria-label="Abrir perfil" className="flex items-center gap-2 group">
+              <div className="w-8 h-8 rounded-full bg-neutral-300 text-neutral-700 grid place-items-center text-xs overflow-hidden">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                {/* FUTURO: quando houver avatar real, renderizar <img src={user.avatar} alt="" /> */}
+                <span className="select-none">ME</span>
+              </div>
               <span className="hidden md:inline text-sm group-hover:text-red-400">Me ▾</span>
-            </button>
+            </Link>
           </div>
         </div>
       </nav>

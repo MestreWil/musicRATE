@@ -3,10 +3,11 @@ import Link from 'next/link';
 import { getMockAlbumDetail } from '@/lib/mockData';
 import { TrackListItem } from '@/components/TrackListItem';
 import { ReviewCard } from '@/components/ReviewCard';
+import { ReviewForm } from '@/components/ReviewForm';
 
 interface Params { params: Promise<{ id: string }> }
 
-export default async function AlbumDetailPage({ params }: Params) {
+export default async function AlbumDetailPage({ params }: Readonly<Params>) {
   const { id } = await params;
   const album = getMockAlbumDetail(id);
 
@@ -27,17 +28,56 @@ export default async function AlbumDetailPage({ params }: Params) {
         <div className="rounded-xl bg-gradient-to-r from-sky-900/40 to-blue-700/30 border border-neutral-800 p-4 md:p-6">
           <div className="grid grid-cols-1 md:grid-cols-[220px_1fr_320px] gap-5 items-start">
             {/* Capa */}
-            <div className="relative w-full aspect-square rounded-lg overflow-hidden bg-neutral-800">
-              {album.image ? (
-                <Image src={album.image} alt={album.name} fill sizes="220px" className="object-cover" />
-              ) : (
-                <div className="w-full h-full grid place-items-center text-neutral-500">Sem capa</div>
+            <div>
+              <div className="relative w-full aspect-square rounded-lg overflow-hidden bg-neutral-800">
+                {album.image ? (
+                  <Image src={album.image} alt={album.name} fill sizes="220px" className="object-cover" />
+                ) : (
+                  <div className="w-full h-full grid place-items-center text-neutral-500">Sem capa</div>
+                )}
+              </div>
+              {/* Média de avaliação posicionada abaixo da capa */}
+              {typeof album.avgRating === 'number' && (
+                <div className="mt-3 flex items-center gap-2 whitespace-nowrap">
+                  <div className="flex items-center">
+                    {Array.from({ length: 5 }).map((_, i) => {
+                      const n = i + 1;
+                      const fraction = Math.max(0, Math.min(1, (album.avgRating ?? 0) - (n - 1)));
+                      const percent = Math.round(fraction * 100);
+                      return (
+                        <span key={`avg-star-${n}`} className="relative inline-block" style={{ width: 18, height: 18 }}>
+                          {/* base (vazia) */}
+                          <svg width="18" height="18" viewBox="0 0 20 20" className="absolute left-0 top-0 text-neutral-500">
+                            <path d="M10 15.27L16.18 19l-1.64-7.03L20 7.24l-7.19-.61L10 0 7.19 6.63 0 7.24l5.46 4.73L3.82 19z" fill="none" stroke="currentColor" />
+                          </svg>
+                          {/* preenchimento proporcional (meia estrela, etc.) */}
+                          <div className="absolute left-0 top-0 overflow-hidden" style={{ width: `${percent}%`, height: 18 }}>
+                            <svg width="18" height="18" viewBox="0 0 20 20" className="text-yellow-500">
+                              <path d="M10 15.27L16.18 19l-1.64-7.03L20 7.24l-7.19-.61L10 0 7.19 6.63 0 7.24l5.46 4.73L3.82 19z" fill="currentColor" stroke="currentColor" />
+                            </svg>
+                          </div>
+                        </span>
+                      );
+                    })}
+                  </div>
+                  <span className="text-sm text-neutral-300">{album.avgRating.toFixed(1)}{'\u00A0/\u00A0'}5</span>
+                  {typeof album.ratingsCount === 'number' && (
+                    <span className="text-xs text-neutral-400">({Intl.NumberFormat('en-US').format(album.ratingsCount)} ratings)</span>
+                  )}
+                </div>
               )}
             </div>
             {/* Info principal */}
             <div className="min-w-0 text-neutral-100">
               <h1 className="text-3xl font-bold">{album.name}</h1>
-              <p className="text-neutral-300">{album.artists.map(a => a.name).join(', ')}</p>
+              <p className="text-neutral-300">
+                {album.artists.map((a, idx) => (
+                  <span key={a.id}>
+                    <Link href={`/artists/${a.id}`} className="text-red-400 hover:underline">{a.name}</Link>
+                    {idx < album.artists.length - 1 && <span className="text-neutral-400">, </span>}
+                  </span>
+                ))}
+              </p>
               <div className="mt-3 text-sm text-neutral-300 space-y-1">
                 {album.genres && <p><span className="text-neutral-400">Gênero:</span> {album.genres.join(', ')}</p>}
                 {album.year && <p><span className="text-neutral-400">Release:</span> {album.year}</p>}
@@ -72,12 +112,8 @@ export default async function AlbumDetailPage({ params }: Params) {
       <section className="max-w-7xl mx-auto px-6 pb-14">
         <h2 className="text-neutral-200 text-base font-semibold mb-4">Reviews</h2>
 
-  {/* Caixa de review (mock). Para interatividade real, converta para Client Component. */}
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-full bg-neutral-700 grid place-items-center text-neutral-300">👤</div>
-          <input className="flex-1 h-11 rounded-md bg-neutral-900 border border-neutral-800 px-3 text-sm text-neutral-100 placeholder:text-neutral-500" placeholder="Faça sua Review aqui" />
-          <button className="h-11 px-4 rounded-md bg-red-600 hover:bg-red-500 text-white text-sm font-medium">Send</button>
-        </div>
+        {/* Formulário de review: envia texto + avaliação simultaneamente */}
+        <ReviewForm entityType="album" entityId={id} />
 
         {/* Lista de reviews mock */}
         <div className="grid md:grid-cols-2 gap-4">

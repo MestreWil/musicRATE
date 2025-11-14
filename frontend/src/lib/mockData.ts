@@ -8,6 +8,19 @@ export interface AlbumDetail extends Album {
   description?: string;
   youtubeUrl?: string;
   tracks: Array<Track & { trackNumber?: number }>; // ordem de faixas
+  avgRating?: number; // média 0-5
+  ratingsCount?: number; // total de avaliações
+}
+
+// Detalhe de artista para página /artists/[id]
+export interface ArtistDetail extends Artist {
+  handle?: string; // @user
+  bannerImage?: string;
+  verified?: boolean;
+  followersCount?: number; // redundante a compatibilidade
+  followingCount?: number;
+  bio?: string;
+  albums?: Array<Album & { year?: number }>; // destaque
 }
 
 export interface GenreHighlight {
@@ -72,6 +85,8 @@ export const mockAlbumDetails: Record<string, AlbumDetail> = {
     year: 2024,
     description: 'Álbum equilibrado e dinâmico com momentos introspectivos.',
     youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    avgRating: 4.3,
+    ratingsCount: 1287,
     tracks: [
       { id: 't101', name: 'Crack com Mussilon', durationMs: 176000, artists: [{ id: 'a1', name: 'Matue' }], trackNumber: 1 },
       { id: 't102', name: 'Imagina esse Cenário', durationMs: 182000, artists: [{ id: 'a1', name: 'Matue' }], trackNumber: 2 },
@@ -91,4 +106,118 @@ export function msToTime(ms?: number) {
   const m = Math.floor(ms / 60000);
   const s = Math.floor((ms % 60000) / 1000).toString().padStart(2, '0');
   return `${m}:${s}`;
+}
+
+export const mockArtistDetails: Record<string, ArtistDetail> = {
+  a1: {
+    id: 'a1',
+    name: 'Matue',
+    image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=300&q=60',
+    bannerImage: 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=1400&q=60',
+    handle: '@matue',
+    verified: true,
+    genres: ['Trap'],
+    followers: 2000000,
+    followersCount: 2000000,
+    followingCount: 100,
+    bio: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam eu turpis molestie, dictum est a, mattis tellus. Sed dignissim, metus nec fringilla accumsan, risus sem sollicitudin lacus, ut interdum tellus elit sed risus.',
+    albums: [
+      { id: 'al1', name: '333', image: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=200&q=60', artists: [{ id: 'a1', name: 'Matue' }], releaseDate: '2024-05-01', totalTracks: 12, },
+    ].map(a => ({ ...a, year: a.releaseDate ? Number(a.releaseDate.slice(0,4)) : undefined }))
+  },
+  a3: {
+    id: 'a3',
+    name: 'Sabrina Carpenter',
+    image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=300&q=60',
+    bannerImage: 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&w=1400&q=60',
+    handle: '@sabrina',
+    verified: true,
+    genres: ['Pop'],
+    followers: 4000000,
+    followersCount: 4000000,
+    followingCount: 120,
+    bio: 'Cantora e compositora. Experiência em pop contemporâneo com forte presença em redes sociais.',
+    albums: [
+      { id: 'al2', name: 'HIT ME HARD AND SOFT', image: 'https://images.unsplash.com/photo-1533237264985-ee62b051b210?auto=format&fit=crop&w=200&q=60', artists: [{ id: 'a2', name: 'Billie Eilish' }], releaseDate: '2024-01-20', totalTracks: 10 },
+    ].map(a => ({ ...a, year: a.releaseDate ? Number(a.releaseDate.slice(0,4)) : undefined }))
+  }
+};
+
+export function getMockArtistDetail(id: string): ArtistDetail | null {
+  return mockArtistDetails[id] ?? null;
+}
+
+// ====== User Profile mocks ======
+export interface UserProfile {
+  id: string;
+  name: string;
+  handle: string; // @user
+  avatar?: string;
+  bannerImage?: string;
+  followers?: number;
+  following?: number;
+  bio?: string;
+}
+
+export type ReviewEntityType = 'album' | 'track' | 'artist';
+export interface UserReviewItem {
+  id: string;
+  type: ReviewEntityType;
+  entityId: string;
+  title: string; // entity name
+  subtitle?: string; // artist name
+  year?: number;
+  cover?: string; // image url
+  excerpt: string;
+  rating: number; // 1-5
+  likes?: number;
+  comments?: number;
+}
+
+export const mockUserProfile: UserProfile = {
+  id: 'u1',
+  name: 'Robertinho',
+  handle: '@Robertinho',
+  avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=160&q=60',
+  bannerImage: 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=1400&q=60',
+  followers: 100,
+  following: 100,
+  bio: 'Sorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam eu turpis molestie, dictum est a, mattis tellus. Sed dignissim, metus nec fringilla accumsan, risus sem sollicitudin lacus, ut interdum tellus elit sed risus.'
+};
+
+export const mockUserReviews: UserReviewItem[] = [
+  {
+    id: 'r1',
+    type: 'track',
+    entityId: 't200',
+    title: 'PARANOIA',
+    subtitle: 'Maggie Lindemann',
+    year: 2021,
+    cover: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=160&q=60',
+    excerpt: 'Top music Crash and Burn',
+    rating: 5,
+    likes: 1000,
+    comments: 0
+  },
+  {
+    id: 'r2',
+    type: 'album',
+    entityId: 'al1',
+    title: 'Lorem',
+    subtitle: 'Lorem Ipsum',
+    year: 2021,
+    cover: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=160&q=60',
+    excerpt: 'Top music Lorem',
+    rating: 4,
+    likes: 1200,
+    comments: 25
+  }
+];
+
+export function getMockUserProfile(): UserProfile {
+  return mockUserProfile;
+}
+
+export function getMockUserReviews(): UserReviewItem[] {
+  return mockUserReviews;
 }
