@@ -1,8 +1,9 @@
 "use client";
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { getSessionClient } from '@/lib/auth';
 
 // Placeholder de logo: substitua <div className="logo-circle"/> por <Image src="/logo.png" ... /> quando tiver o arquivo.
 
@@ -16,8 +17,20 @@ const links = [
 
 export function Navbar() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [openMenu, setOpenMenu] = useState(false);
   const [query, setQuery] = useState('');
+  const [authed, setAuthed] = useState(false);
+
+  useEffect(() => {
+    // Lightweight client-side check; backend should set `mr_session` cookie when authenticated
+    setAuthed(!!getSessionClient());
+  }, []);
+
+  const currentUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}${pathname}${searchParams?.toString() ? `?${searchParams.toString()}` : ''}`
+    : pathname;
+  const loginHref = `/login?return_to=${encodeURIComponent(currentUrl)}`;
 
   return (
     <header className="sticky top-0 z-40 bg-neutral-900 text-white border-b-4 border-red-600">
@@ -94,16 +107,17 @@ export function Navbar() {
             {/* Divider */}
             <span className="hidden md:inline h-6 w-px bg-neutral-700" aria-hidden="true" />
 
-          {/* Usuário / Avatar */}
+          {/* Usuário / Avatar */
+          }
           <div className="flex items-center gap-2">
-            {/* FUTURO: trocar /profile por /login se não autenticado; pegar displayName e avatar reais da API */}
-            <Link href="/profile" aria-label="Abrir perfil" className="flex items-center gap-2 group">
+            {/* Se não autenticado, avatar leva ao /login com return_to */}
+            <Link href={authed ? "/profile" : loginHref} aria-label={authed ? 'Abrir perfil' : 'Fazer login'} className="flex items-center gap-2 group">
               <div className="w-8 h-8 rounded-full bg-neutral-300 text-neutral-700 grid place-items-center text-xs overflow-hidden">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 {/* FUTURO: quando houver avatar real, renderizar <img src={user.avatar} alt="" /> */}
                 <span className="select-none">ME</span>
               </div>
-              <span className="hidden md:inline text-sm group-hover:text-red-400">Me ▾</span>
+              <span className="hidden md:inline text-sm group-hover:text-red-400">{authed ? 'Me ▾' : 'Login'}</span>
             </Link>
           </div>
         </div>
@@ -144,8 +158,8 @@ export function Navbar() {
             })}
           </ul>
           <div className="flex gap-2 pt-2">
-            <button className="flex-1 border border-neutral-700 rounded-md py-2 text-sm hover:bg-neutral-800">Login</button>
-            <button className="flex-1 bg-red-600 rounded-md py-2 text-sm hover:bg-red-500">Sign up</button>
+            <Link href={loginHref} className="flex-1 text-center border border-neutral-700 rounded-md py-2 text-sm hover:bg-neutral-800" onClick={() => setOpenMenu(false)}>Login</Link>
+            <Link href={loginHref} className="flex-1 text-center bg-red-600 rounded-md py-2 text-sm hover:bg-red-500" onClick={() => setOpenMenu(false)}>Sign up</Link>
           </div>
         </div>
       )}

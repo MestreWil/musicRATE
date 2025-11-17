@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { RatingStars } from './RatingStars';
 import { apiPost } from '@/lib/api';
 import { useRouter } from 'next/navigation';
+import { buildLoginPath, getSessionClient } from '@/lib/auth';
 
 interface ReviewFormProps {
   entityType: 'album' | 'track' | 'artist';
@@ -22,6 +23,12 @@ export function ReviewForm({ entityType, entityId, minLength = 10 }: ReviewFormP
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!isValid || submitting) return;
+    // Lazy-auth: if user is not authenticated, redirect to login preserving return_to
+    if (!getSessionClient()) {
+      const href = typeof window !== 'undefined' ? window.location.href : '/';
+      window.location.href = buildLoginPath(href);
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {

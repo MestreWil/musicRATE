@@ -221,3 +221,44 @@ export function getMockUserProfile(): UserProfile {
 export function getMockUserReviews(): UserReviewItem[] {
   return mockUserReviews;
 }
+
+// ====== Track Detail mocks ======
+export interface TrackDetail extends Track {
+  image?: string;
+  description?: string;
+  lyrics?: string;
+  youtubeUrl?: string;
+  avgRating?: number;
+  ratingsCount?: number;
+}
+
+export const mockTrackDetails: Record<string, TrackDetail> = {
+  t1: {
+    id: 't1',
+    name: 'Crawling',
+    artists: [{ id: 'a4', name: 'Linkin Park' }],
+    durationMs: 209000,
+    popularity: 70,
+    image: 'https://images.unsplash.com/photo-1519999482648-25049ddd37b1?auto=format&fit=crop&w=600&q=60',
+    youtubeUrl: 'https://www.youtube.com/watch?v=Gd9OhYroLN0',
+    avgRating: 4.5,
+    ratingsCount: 5234,
+    lyrics: `Crawling in my skin\nThese wounds, they will not heal\nFear is how I fall\nConfusing what is real...`
+  },
+  t2: {
+    id: 't2',
+    name: 'Creep',
+    artists: [{ id: 'a12', name: 'Radiohead' }],
+    durationMs: 240000,
+    popularity: 88,
+    image: 'https://images.unsplash.com/photo-1533237264985-ee62b051b210?auto=format&fit=crop&w=600&q=60',
+    youtubeUrl: 'https://www.youtube.com/watch?v=XFkzRNyygfk',
+    avgRating: 4.7,
+    ratingsCount: 8123,
+    lyrics: `But I'm a creep, I'm a weirdo\nWhat the hell am I doin' here?\nI don't belong here...`
+  }
+};
+
+export function getMockTrackDetail(id: string): TrackDetail | null {
+  return mockTrackDetails[id] ?? null;
+}
