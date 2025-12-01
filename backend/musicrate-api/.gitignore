@@ -1,0 +1,65 @@
+/.phpunit.cache
+/bootstrap/ssr
+/node_modules
+/public/build
+/public/hot
+/public/storage
+/resources/js/actions
+/resources/js/routes
+/resources/js/wayfinder
+/storage/*.key
+/storage/pail
+/vendor
+.DS_Store
+.env
+.env.backup
+.env.production
+.phpactor.json
+.phpunit.result.cache
+Homestead.json
+Homestead.yaml
+npm-debug.log
+yarn-error.log
+/auth.json
+/.fleet
+/.idea
+/.nova
+/.vscode
+/.zed
+
+# Docker
+/postgresql/data/
+docker-compose.override.yml
+
+# SQLite databases
+*.sqlite
+*.sqlite-journal
+/database/database.sqlite
+
+# Logs
+*.log
+/storage/logs/*.log
+
+# OS
+Thumbs.db
+.DS_Store
+._*
+
+# Composer
+composer.phar
+composer.lock
+
+# NPM/Yarn
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# IDE
+*.swp
+*.swo
+*~
+.project
+.settings
+.classpath
+.c9/
+.buildpath

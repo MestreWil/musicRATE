@@ -1,0 +1,40 @@
+version: '3.9'
+
+networks:
+  musicrate_network:
+    name: musicrate_network
+
+services:
+  php-apache:
+    image: webdevops/php-apache:8.2-alpine
+    container_name: musicrate_app
+    restart: always
+    ports:
+      - '80:80'
+      - '8000:80'
+    volumes:
+      - .:/app
+    environment:
+      - WEB_DOCUMENT_ROOT=/app/public
+    depends_on:
+      - musicrate_db
+    networks:
+      musicrate_network:
+        aliases:
+          - musicrate_app
+
+  musicrate_db:
+    image: postgres:${POSTGRESQL_VERSION}
+    container_name: musicrate_db
+    restart: always
+    ports:
+      - '5432:5432'
+    volumes:
+      - ./postgresql/scripts:/docker-entrypoint-initdb.d/
+      - ./postgresql/data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRESQL_PASS}
+    networks:
+      musicrate_network:
+        aliases:
+          - musicrate_db
