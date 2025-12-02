@@ -23,6 +23,11 @@ return Application::configure(basePath: dirname(__DIR__))
             AddLinkHeadersForPreloadedAssets::class,
         ]);
 
+        // Habilitar CORS para rotas da API
+        $middleware->api(prepend: [
+            \Illuminate\Http\Middleware\HandleCors::class,
+        ]);
+
         $middleware->alias([
             'spotify.token' => \App\Http\Middleware\EnsureSpotifyToken::class,
         ]);

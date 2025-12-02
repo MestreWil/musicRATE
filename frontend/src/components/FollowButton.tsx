@@ -42,10 +42,18 @@ export function FollowButton({ artistId, initialFollowing = false }: Readonly<Fo
       type="button"
       onClick={onClick}
       disabled={loading}
-      className={`rounded-full text-white text-sm px-4 py-1.5 ${following ? 'bg-neutral-700' : 'bg-red-600 hover:bg-red-500'} ${loading ? 'opacity-70' : ''}`}
+      className={`
+        w-full py-2.5 px-5 rounded-lg font-bold text-sm transition-all duration-200
+        ${following 
+          ? 'bg-neutral-800/80 hover:bg-neutral-700/80 text-white border border-neutral-600' 
+          : 'bg-red-600 hover:bg-red-700 text-white shadow-md hover:shadow-lg'
+        }
+        ${loading ? 'opacity-70 cursor-wait' : 'cursor-pointer'}
+        disabled:opacity-50 disabled:cursor-not-allowed
+      `}
       aria-pressed={following}
     >
-      {following ? 'Seguindo' : 'Seguir'}
+      {loading ? '...' : following ? 'Following' : 'Follow'}
     </button>
   );
 }

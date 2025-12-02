@@ -4,7 +4,7 @@ import Link from 'next/link';
 export function Footer() {
   const year = new Date().getFullYear();
   return (
-    <footer className="mt-16 bg-neutral-900 text-neutral-200">
+    <footer className="bg-neutral-900 text-neutral-200">
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Top: Brand + Social */}
         <div className="flex items-center justify-between">

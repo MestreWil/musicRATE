@@ -21,6 +21,7 @@ export interface Album {
 export interface Track {
   id: string;
   name: string;
+  image?: string | null; // imagem da track (quando disponível)
   durationMs?: number;
   artists: Pick<Artist, 'id' | 'name'>[];
   album?: Pick<Album, 'id' | 'name' | 'image'>;

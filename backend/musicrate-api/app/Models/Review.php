@@ -15,6 +15,10 @@ class Review extends Model
         'user_id',
         'target_type',
         'target_spotify_id',
+        'spotify_album_id',
+        'album_name',
+        'artist_name',
+        'album_image_url',
         'rating',
         'review_text',
         'active',
@@ -57,6 +61,14 @@ class Review extends Model
     public function scopeMinimumRating($query, int $rating)
     {
         return $query->where('rating', '>=', $rating);
+    }
+
+    /**
+     * Scope para filtrar por álbum
+     */
+    public function scopeByAlbum($query, string $spotifyAlbumId)
+    {
+        return $query->where('spotify_album_id', $spotifyAlbumId);
     }
 
     /**

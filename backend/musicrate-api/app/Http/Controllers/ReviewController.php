@@ -24,7 +24,7 @@ class ReviewController extends Controller
     {
         $perPage = $request->input('per_page', 15);
         
-        $reviews = Review::with('user:id,name,email')
+        $reviews = Review::with('user:id,display_name,email')
             ->latest()
             ->paginate($perPage);
 
@@ -36,14 +36,14 @@ class ReviewController extends Controller
      */
     public function byAlbum(string $spotifyAlbumId): JsonResponse
     {
-        $reviews = Review::with('user:id,name,email')
+        $reviews = Review::with('user:id,display_name,email')
             ->byAlbum($spotifyAlbumId)
             ->latest()
             ->get();
 
         $stats = [
             'total' => $reviews->count(),
-            'average_rating' => round($reviews->avg('rating'), 2),
+            'average_rating' => round($reviews->avg('rating') ?? 0, 2),
             'rating_distribution' => $this->getRatingDistribution($reviews),
         ];
 
@@ -97,13 +97,15 @@ class ReviewController extends Controller
         }
 
         // Buscar dados do álbum no Spotify para cache
-        $token = $request->attributes->get('spotify_token');
+        $token = $request->attributes->get('spotify_token') ?? AuthController::getClientCredentialsToken();
         $albumData = $this->spotifyService
             ->setAccessToken($token)
             ->getAlbum($request->spotify_album_id);
 
         $review = Review::create([
             'user_id' => $request->user()->id,
+            'target_type' => 'album',
+            'target_spotify_id' => $request->spotify_album_id,
             'spotify_album_id' => $request->spotify_album_id,
             'album_name' => $albumData['name'] ?? null,
             'artist_name' => $albumData['artists'][0]['name'] ?? null,
@@ -114,7 +116,7 @@ class ReviewController extends Controller
 
         return response()->json([
             'message' => 'Review criada com sucesso',
-            'review' => $review->load('user:id,name,email'),
+            'review' => $review->load('user:id,display_name,email'),
         ], 201);
     }
 
@@ -123,7 +125,7 @@ class ReviewController extends Controller
      */
     public function show(Review $review): JsonResponse
     {
-        return response()->json($review->load('user:id,name,email'));
+        return response()->json($review->load('user:id,display_name,email'));
     }
 
     /**
@@ -154,7 +156,7 @@ class ReviewController extends Controller
 
         return response()->json([
             'message' => 'Review atualizada com sucesso',
-            'review' => $review->fresh()->load('user:id,name,email'),
+            'review' => $review->fresh()->load('user:id,display_name,email'),
         ]);
     }
 
@@ -182,32 +184,61 @@ class ReviewController extends Controller
      */
     public function stats(): JsonResponse
     {
-        $totalReviews = Review::count();
-        $averageRating = round(Review::avg('rating'), 2);
-        $totalUsers = Review::distinct('user_id')->count();
-        $totalAlbums = Review::distinct('spotify_album_id')->count();
+        try {
+            // Queries simples e seguras
+            $totalReviews = Review::count();
+            $averageRating = 0;
+            
+            if ($totalReviews > 0) {
+                $averageRating = round(Review::avg('rating') ?? 0, 2);
+            }
+            
+            $totalUsers = 0;
+            $totalAlbums = 0;
+            
+            try {
+                $totalUsers = Review::distinct()->count('user_id');
+            } catch (\Exception $e) {
+                \Log::warning('Could not count distinct users', ['error' => $e->getMessage()]);
+            }
+            
+            try {
+                $totalAlbums = Review::whereNotNull('spotify_album_id')
+                    ->distinct()
+                    ->count('spotify_album_id');
+            } catch (\Exception $e) {
+                \Log::warning('Could not count distinct albums', ['error' => $e->getMessage()]);
+            }
 
-        $topRatedAlbums = Review::select('spotify_album_id', 'album_name', 'artist_name', 'album_image_url')
-            ->selectRaw('AVG(rating) as avg_rating, COUNT(*) as review_count')
-            ->groupBy('spotify_album_id', 'album_name', 'artist_name', 'album_image_url')
-            ->having('review_count', '>=', 3)
-            ->orderByDesc('avg_rating')
-            ->limit(10)
-            ->get();
+            // Recent reviews apenas
+            $recentReviews = Review::latest()
+                ->limit(10)
+                ->get();
 
-        $recentReviews = Review::with('user:id,name')
-            ->latest()
-            ->limit(10)
-            ->get();
-
-        return response()->json([
-            'total_reviews' => $totalReviews,
-            'average_rating' => $averageRating,
-            'total_users' => $totalUsers,
-            'total_albums_reviewed' => $totalAlbums,
-            'top_rated_albums' => $topRatedAlbums,
-            'recent_reviews' => $recentReviews,
-        ]);
+            return response()->json([
+                'total_reviews' => $totalReviews,
+                'average_rating' => $averageRating,
+                'total_users' => $totalUsers,
+                'total_albums_reviewed' => $totalAlbums,
+                'top_rated_albums' => [],
+                'recent_reviews' => $recentReviews,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error in stats endpoint', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'total_reviews' => 0,
+                'average_rating' => 0,
+                'total_users' => 0,
+                'total_albums_reviewed' => 0,
+                'top_rated_albums' => [],
+                'recent_reviews' => [],
+                'error' => 'Erro ao carregar estatísticas: ' . $e->getMessage()
+            ], 200);
+        }
     }
 
     /**

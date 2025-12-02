@@ -9,6 +9,10 @@ export default function AuthCallbackPage() {
   useEffect(() => {
     // After backend sets cookies, redirect to original target
     const returnTo = sp.get('return_to') || '/';
+    
+    // Dispatch a custom event to notify auth hooks that login completed
+    window.dispatchEvent(new CustomEvent('auth:login'));
+    
     const delay = setTimeout(() => {
       router.replace(returnTo);
     }, 600);

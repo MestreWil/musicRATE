@@ -1,27 +1,121 @@
+'use client';
+
 import Link from 'next/link';
 import Image from 'next/image';
 import { Track } from '@/lib/types';
 
-// Futuro: trocar para buscar dados dinâmicos da API (getTrackDetail)
-export function TrackCard({ track }: { track: Track }) {
+// Componente para exibir track em formato de lista (usado em resultados de busca)
+export default function TrackCard({ track, index }: { track: Track; index?: number }) {
+  // Formatar duração (ms para mm:ss)
+  const formatDuration = (ms: number) => {
+    const totalSeconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  // Usar a capa do álbum como imagem da track
+  const coverImage = track.album?.image || track.image;
+
   return (
-    <Link
-      href={`/tracks/${track.id}`}
-      className="w-44 p-3 rounded-lg border border-border hover:shadow-sm transition bg-background/70 flex flex-col gap-2"
-      prefetch={false} // para evitar prefetch massivo em listas grandes
-    >
-      <div className="aspect-square w-full rounded-md bg-neutral-200 dark:bg-neutral-800 grid place-items-center text-xs text-neutral-500 overflow-hidden">
-        {/* Quando integrar API, usar track.image se disponível */}
-        {track.image ? (
-          <Image src={track.image} alt={track.name} fill className="object-cover" />
+    <div className="group flex items-center gap-4 p-3 rounded-lg hover:bg-neutral-800/50 transition-colors">
+      {/* Número/Play Button */}
+      <div className="w-8 text-center text-neutral-400 text-sm shrink-0">
+        {typeof index === 'number' ? (
+          <span className="group-hover:hidden">{index + 1}</span>
+        ) : null}
+        <button 
+          className={`${typeof index === 'number' ? 'hidden' : ''} group-hover:block text-white`}
+          aria-label="Play"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M8 5v14l11-7z"/>
+          </svg>
+        </button>
+      </div>
+
+      {/* Capa */}
+      <div className="w-12 h-12 relative shrink-0 rounded overflow-hidden bg-neutral-800">
+        {coverImage ? (
+          <Image 
+            src={coverImage} 
+            alt={track.name}
+            fill
+            sizes="48px"
+            className="object-cover"
+          />
         ) : (
-          'Cover'
+          <div className="w-full h-full grid place-items-center text-neutral-600">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+            </svg>
+          </div>
         )}
       </div>
-      <div className="min-w-0 flex flex-col">
-        <h3 className="text-sm font-medium truncate hover:underline">{track.name}</h3>
-        <p className="text-[11px] text-neutral-500 dark:text-neutral-400 truncate">{track.artists.map(a => a.name).join(', ')}</p>
+
+      {/* Info da Track */}
+      <div className="flex-1 min-w-0">
+        <Link 
+          href={`/tracks/${track.id}`}
+          className="block hover:underline"
+        >
+          <h3 className="text-white font-medium truncate">{track.name}</h3>
+        </Link>
+        <div className="flex items-center gap-2 text-sm text-neutral-400">
+          <span className="truncate">
+            {track.artists.map((artist, i) => (
+              <span key={artist.id}>
+                {i > 0 && ', '}
+                <Link 
+                  href={`/artists/${artist.id}`}
+                  className="hover:underline hover:text-white transition-colors"
+                >
+                  {artist.name}
+                </Link>
+              </span>
+            ))}
+          </span>
+        </div>
       </div>
-    </Link>
+
+      {/* Álbum */}
+      {track.album && (
+        <div className="hidden md:block flex-1 min-w-0 text-sm text-neutral-400">
+          <Link 
+            href={`/albums/${track.album.id}`}
+            className="hover:underline hover:text-white truncate block transition-colors"
+          >
+            {track.album.name}
+          </Link>
+        </div>
+      )}
+
+      {/* Duração */}
+      <div className="text-sm text-neutral-400 shrink-0">
+        {track.durationMs ? formatDuration(track.durationMs) : '--:--'}
+      </div>
+
+      {/* Ações */}
+      <div className="flex items-center gap-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button 
+          className="text-neutral-400 hover:text-white transition-colors"
+          aria-label="Adicionar aos favoritos"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          </svg>
+        </button>
+        <button 
+          className="text-neutral-400 hover:text-white transition-colors"
+          aria-label="Mais opções"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="12" cy="5" r="1.5"/>
+            <circle cx="12" cy="12" r="1.5"/>
+            <circle cx="12" cy="19" r="1.5"/>
+          </svg>
+        </button>
+      </div>
+    </div>
   );
 }

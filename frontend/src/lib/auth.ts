@@ -20,25 +20,19 @@ export function getSessionClient(): Session {
 
 // Build the backend OAuth start URL with "redirect_uri" (frontend callback) and optional return path.
 export function getSpotifyLoginUrl(returnTo?: string): string {
-  const base = process.env.NEXT_PUBLIC_BACKEND_API_BASE_URL || '';
+  const base = process.env.NEXT_PUBLIC_BACKEND_API_BASE_URL || 'http://127.0.0.1:8000/api';
   // Frontend callback path (the backend should redirect here after finishing OAuth and setting cookies)
   const frontendCallback =
     typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : '/auth/callback';
   const rt =
     returnTo || (typeof window !== 'undefined' ? window.location.href : '/');
 
-  try {
-    const url = new URL('/auth/spotify/start', base);
-    url.searchParams.set('redirect_uri', frontendCallback);
-    url.searchParams.set('return_to', rt);
-    return url.toString();
-  } catch {
-    // If NEXT_PUBLIC_BACKEND_API_BASE_URL is not set, still navigate to relative path so dev can see intent
-    const url = new URL('/auth/spotify/start', window.location.origin);
-    url.searchParams.set('redirect_uri', frontendCallback);
-    url.searchParams.set('return_to', rt);
-    return url.toString();
-  }
+  // Construir URL corretamente: base já tem /api, então adicionar /auth/spotify
+  const authUrl = `${base}/auth/spotify`;
+  const url = new URL(authUrl);
+  url.searchParams.set('redirect_uri', frontendCallback);
+  url.searchParams.set('return_to', rt);
+  return url.toString();
 }
 
 // Build a frontend login path including the original location
