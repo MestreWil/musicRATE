@@ -6,9 +6,11 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'images.unsplash.com' },
       { protocol: 'https', hostname: 'i.scdn.co' },
       { protocol: 'https', hostname: 'mosaic.scdn.co' },
-      { protocol: 'https', hostname: 't.scdn.co' }
+      { protocol: 'https', hostname: 't.scdn.co' },
+      { protocol: 'https', hostname: 'campaigns-service.spotifycdn.com' },
+      { protocol: 'https', hostname: '**.spotifycdn.com' }
     ]
-  }
+  },
 };
 
 export default nextConfig;

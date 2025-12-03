@@ -22,8 +22,12 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('auth')->middleware(['web'])->group(function () {
     Route::get('/spotify', [AuthController::class, 'redirectToSpotify'])->name('auth.spotify');
     Route::get('/callback', [AuthController::class, 'handleSpotifyCallback'])->name('auth.callback');
-    Route::get('/me', [AuthController::class, 'me'])->name('auth.me');
-    Route::post('/logout', [AuthController::class, 'logout'])->name('auth.logout');
+});
+
+// Auth check - usa Sanctum Bearer token
+Route::prefix('auth')->group(function () {
+    Route::get('/me', [AuthController::class, 'me'])->middleware('auth:sanctum')->name('auth.me');
+    Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum')->name('auth.logout');
 });
 
 // ROTA TEMPORÁRIA - DESENVOLVIMENTO: Criar usuário
@@ -88,7 +92,6 @@ Route::middleware(['web', 'auth:sanctum'])->group(function () {
     // Gerenciamento de token
     Route::prefix('auth')->group(function () {
         Route::get('/token', [AuthController::class, 'getToken'])->name('auth.token');
-        Route::post('/logout', [AuthController::class, 'logout'])->name('auth.logout');
     });
 
     // Reviews protegidas (criar, editar, deletar)
