@@ -32,6 +32,30 @@ class ReviewController extends Controller
     }
 
     /**
+     * Lista reviews por target (album, track, single)
+     */
+    public function byTarget(Request $request, string $targetType, string $targetSpotifyId): JsonResponse
+    {
+        $reviews = Review::with('user:id,display_name,email,avatar_url')
+            ->where('target_type', $targetType)
+            ->where('target_spotify_id', $targetSpotifyId)
+            ->where('active', 'Y')
+            ->latest()
+            ->get();
+
+        $stats = [
+            'total' => $reviews->count(),
+            'average_rating' => round($reviews->avg('rating') ?? 0, 2),
+            'rating_distribution' => $this->getRatingDistribution($reviews, 5), // 1-5 stars
+        ];
+
+        return response()->json([
+            'reviews' => $reviews,
+            'stats' => $stats,
+        ]);
+    }
+
+    /**
      * Lista reviews de um álbum específico
      */
     public function byAlbum(string $spotifyAlbumId): JsonResponse
@@ -73,8 +97,9 @@ class ReviewController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'spotify_album_id' => 'required|string|max:50',
-            'rating' => 'required|integer|min:1|max:10',
+            'target_type' => 'required|string|in:album,track,single',
+            'target_spotify_id' => 'required|string|max:50',
+            'rating' => 'required|integer|min:1|max:5', // Mudado para 1-5
             'review_text' => 'nullable|string|max:2000',
         ]);
 
@@ -85,38 +110,56 @@ class ReviewController extends Controller
             ], 422);
         }
 
-        // Verificar se já existe review deste usuário para este álbum
+        // Verificar se já existe review deste usuário para este item
         $existingReview = Review::where('user_id', $request->user()->id)
-            ->where('spotify_album_id', $request->spotify_album_id)
+            ->where('target_type', $request->target_type)
+            ->where('target_spotify_id', $request->target_spotify_id)
             ->first();
 
         if ($existingReview) {
             return response()->json([
-                'error' => 'Você já avaliou este álbum. Use PUT para atualizar.'
+                'error' => 'Você já avaliou este item. Use PUT para atualizar.',
+                'existing_review_id' => $existingReview->id
             ], 409);
         }
 
-        // Buscar dados do álbum no Spotify para cache
+        // Buscar dados do item no Spotify para cache
         $token = $request->attributes->get('spotify_token') ?? AuthController::getClientCredentialsToken();
-        $albumData = $this->spotifyService
-            ->setAccessToken($token)
-            ->getAlbum($request->spotify_album_id);
+        $itemData = null;
+        
+        try {
+            if ($request->target_type === 'album' || $request->target_type === 'single') {
+                $itemData = $this->spotifyService
+                    ->setAccessToken($token)
+                    ->getAlbum($request->target_spotify_id);
+            } elseif ($request->target_type === 'track') {
+                $itemData = $this->spotifyService
+                    ->setAccessToken($token)
+                    ->getTrack($request->target_spotify_id);
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Error fetching Spotify data for review', [
+                'type' => $request->target_type,
+                'id' => $request->target_spotify_id,
+                'error' => $e->getMessage()
+            ]);
+        }
 
         $review = Review::create([
             'user_id' => $request->user()->id,
-            'target_type' => 'album',
-            'target_spotify_id' => $request->spotify_album_id,
-            'spotify_album_id' => $request->spotify_album_id,
-            'album_name' => $albumData['name'] ?? null,
-            'artist_name' => $albumData['artists'][0]['name'] ?? null,
-            'album_image_url' => $albumData['images'][0]['url'] ?? null,
+            'target_type' => $request->target_type,
+            'target_spotify_id' => $request->target_spotify_id,
+            'spotify_album_id' => $request->target_type === 'album' ? $request->target_spotify_id : ($itemData['album']['id'] ?? null),
+            'album_name' => $itemData['name'] ?? null,
+            'artist_name' => $itemData['artists'][0]['name'] ?? null,
+            'album_image_url' => $itemData['images'][0]['url'] ?? ($itemData['album']['images'][0]['url'] ?? null),
             'rating' => $request->rating,
             'review_text' => $request->review_text,
         ]);
 
         return response()->json([
             'message' => 'Review criada com sucesso',
-            'review' => $review->load('user:id,display_name,email'),
+            'review' => $review->load('user:id,display_name,email,avatar_url'),
         ], 201);
     }
 
@@ -141,7 +184,7 @@ class ReviewController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'rating' => 'sometimes|required|integer|min:1|max:10',
+            'rating' => 'sometimes|required|integer|min:1|max:5', // Mudado para 1-5
             'review_text' => 'nullable|string|max:2000',
         ]);
 
@@ -156,7 +199,7 @@ class ReviewController extends Controller
 
         return response()->json([
             'message' => 'Review atualizada com sucesso',
-            'review' => $review->fresh()->load('user:id,display_name,email'),
+            'review' => $review->fresh()->load('user:id,display_name,email,avatar_url'),
         ]);
     }
 
@@ -244,10 +287,10 @@ class ReviewController extends Controller
     /**
      * Helper para distribuição de ratings
      */
-    private function getRatingDistribution($reviews): array
+    private function getRatingDistribution($reviews, int $maxRating = 5): array
     {
         $distribution = [];
-        for ($i = 1; $i <= 10; $i++) {
+        for ($i = 1; $i <= $maxRating; $i++) {
             $distribution[$i] = $reviews->where('rating', $i)->count();
         }
         return $distribution;

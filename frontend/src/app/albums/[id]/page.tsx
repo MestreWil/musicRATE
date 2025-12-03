@@ -2,9 +2,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { getAlbum, getAlbumTracks } from '@/lib/spotify';
 import TrackCard from '@/components/TrackCard';
-import { ReviewCard } from '@/components/ReviewCard';
-import { ReviewForm } from '@/components/ReviewForm';
 import { notFound } from 'next/navigation';
+import { AlbumReviewsSection } from './AlbumReviewsSection';
 
 interface Params { params: Promise<{ id: string }> }
 
@@ -205,37 +204,16 @@ export default async function AlbumDetailPage({ params }: Readonly<Params>) {
 
             {/* Placeholder for future features */}
             <div className="bg-gradient-to-br from-red-900/20 to-red-700/10 rounded-lg p-6 border border-red-800/30">
-              <h3 className="text-lg font-semibold mb-2">Avaliações em breve</h3>
+              <h3 className="text-lg font-semibold mb-2">Rate this album</h3>
               <p className="text-sm text-neutral-300">
-                Sistema de reviews estará disponível em breve.
+                Share your thoughts and help others discover great music.
               </p>
             </div>
           </div>
         </div>
 
         {/* Reviews Section */}
-        <section className="mt-12">
-          <h2 className="text-2xl font-bold mb-6">Reviews da Comunidade</h2>
-
-          {/* Review Form */}
-          <div className="mb-8">
-            <ReviewForm entityType="album" entityId={id} />
-          </div>
-
-          {/* Reviews List - Placeholder */}
-          <div className="grid md:grid-cols-2 gap-4">
-            <ReviewCard 
-              author="MestreWILL" 
-              rating={5} 
-              text="Álbum incrível! Cada faixa tem sua própria identidade mas mantém a coesão do projeto. Produção impecável." 
-            />
-            <ReviewCard 
-              author="Usuário" 
-              rating={4} 
-              text="Muito bom! Algumas músicas são verdadeiros destaques." 
-            />
-          </div>
-        </section>
+        <AlbumReviewsSection albumId={id} />
       </div>
     </div>
   );

@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/useAuth';
 
 const links = [
@@ -16,8 +16,55 @@ export function Navbar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [openMenu, setOpenMenu] = useState(false);
+  const [openUserMenu, setOpenUserMenu] = useState(false);
   const [query, setQuery] = useState('');
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
   const { authenticated, user, loading } = useAuth();
+
+  // Controle de scroll para esconder/mostrar navbar
+  useEffect(() => {
+    const controlNavbar = () => {
+      const currentScrollY = window.scrollY;
+      
+      if (currentScrollY < 10) {
+        // Sempre mostrar no topo
+        setIsVisible(true);
+      } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        // Scrolling down e passou de 100px
+        setIsVisible(false);
+        setOpenUserMenu(false); // Fechar menu do usuário
+        setOpenMenu(false); // Fechar menu mobile
+      } else if (currentScrollY < lastScrollY) {
+        // Scrolling up
+        setIsVisible(true);
+      }
+      
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', controlNavbar);
+    return () => window.removeEventListener('scroll', controlNavbar);
+  }, [lastScrollY]);
+
+  const handleLogout = async () => {
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_BACKEND_API_BASE_URL || 'http://127.0.0.1:8000/api';
+      await fetch(`${baseUrl}/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+      // Recarregar a página para limpar o estado
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Logout failed:', error);
+      // Mesmo com erro, redirecionar para home
+      window.location.href = '/';
+    }
+  };
 
   const currentUrl = typeof window !== 'undefined'
     ? `${window.location.origin}${pathname}${searchParams?.toString() ? `?${searchParams.toString()}` : ''}`
@@ -25,7 +72,9 @@ export function Navbar() {
   const loginHref = `/login?return_to=${encodeURIComponent(currentUrl)}`;
 
   return (
-    <header className="sticky top-0 z-40 bg-neutral-900 text-white border-b-4 border-red-600">
+    <header className={`sticky top-0 z-40 bg-neutral-900 text-white border-b-4 border-red-600 transition-transform duration-300 ${
+      isVisible ? 'translate-y-0' : '-translate-y-full'
+    }`}>
       <nav className="max-w-7xl mx-auto flex items-center gap-4 px-4 lg:px-6 h-20 text-sm">
         {/* Botão menu hamburguer */}
         <button
@@ -117,18 +166,61 @@ export function Navbar() {
                 <span className="hidden md:inline text-sm text-neutral-500">...</span>
               </div>
             ) : authenticated && user ? (
-              // Usuário logado - mostrar avatar e nome
-              <Link href="/profile" aria-label="Abrir perfil" className="flex items-center gap-2 group">
-                <div className="w-8 h-8 rounded-full bg-neutral-300 text-neutral-700 grid place-items-center text-xs overflow-hidden ring-2 ring-transparent group-hover:ring-red-400 transition-all">
-                  {user.avatar ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="select-none font-medium">{user.name.slice(0, 2).toUpperCase()}</span>
-                  )}
-                </div>
-                <span className="hidden md:inline text-sm group-hover:text-red-400 transition-colors">{user.name} ▾</span>
-              </Link>
+              // Usuário logado - mostrar avatar e dropdown
+              <div className="relative">
+                <button 
+                  onClick={() => setOpenUserMenu(!openUserMenu)}
+                  onBlur={(e) => {
+                    // Fechar menu se clicar fora, mas não se clicar dentro do menu
+                    if (!e.currentTarget.parentElement?.contains(e.relatedTarget as Node)) {
+                      setTimeout(() => setOpenUserMenu(false), 200);
+                    }
+                  }}
+                  aria-label="Abrir menu do usuário" 
+                  className="flex items-center gap-2 group"
+                >
+                  <div className="w-8 h-8 rounded-full bg-neutral-300 text-neutral-700 grid place-items-center text-xs overflow-hidden ring-2 ring-transparent group-hover:ring-red-400 transition-all">
+                    {user.avatar ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="select-none font-medium">{user.name.slice(0, 2).toUpperCase()}</span>
+                    )}
+                  </div>
+                  <span className="hidden md:inline text-sm group-hover:text-red-400 transition-colors">
+                    {user.name} {openUserMenu ? '▴' : '▾'}
+                  </span>
+                </button>
+
+                {/* Dropdown Menu */}
+                {openUserMenu && (
+                  <div className="absolute top-full right-0 mt-2 w-56 bg-neutral-800 border border-neutral-700 rounded-lg shadow-xl py-2 z-50">
+                    <div className="px-4 py-3 border-b border-neutral-700">
+                      <p className="text-sm font-medium text-neutral-100 truncate">{user.name}</p>
+                      <p className="text-xs text-neutral-400 truncate">{user.email || user.id}</p>
+                    </div>
+                    <Link 
+                      href="/profile" 
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-neutral-200 hover:bg-neutral-700 transition-colors"
+                      onClick={() => setOpenUserMenu(false)}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      My Profile
+                    </Link>
+                    <button 
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:bg-neutral-700 transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      </svg>
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
             ) : (
               // Não logado - botão "Acessar"
               <Link 
@@ -207,7 +299,7 @@ export function Navbar() {
             })}
           </ul>
 
-          {/* Botão Acessar (apenas se não estiver logado) */}
+          {/* Botão Acessar ou opções de usuário (mobile) */}
           {!authenticated && !loading && (
             <Link 
               href={loginHref} 
@@ -219,6 +311,38 @@ export function Navbar() {
               </svg>
               Acessar com Spotify
             </Link>
+          )}
+
+          {/* Menu de usuário logado (mobile) */}
+          {authenticated && user && !loading && (
+            <div className="border-t border-neutral-800 pt-3 mt-3">
+              <div className="px-3 py-2 mb-2">
+                <p className="text-sm font-medium text-neutral-100 truncate">{user.name}</p>
+                <p className="text-xs text-neutral-400 truncate">{user.email || user.id}</p>
+              </div>
+              <Link 
+                href="/profile" 
+                className="flex items-center gap-3 px-3 py-2 text-sm text-neutral-200 hover:bg-neutral-800 rounded-md transition-colors"
+                onClick={() => setOpenMenu(false)}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                My Profile
+              </Link>
+              <button 
+                onClick={() => {
+                  setOpenMenu(false);
+                  handleLogout();
+                }}
+                className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-400 hover:bg-neutral-800 rounded-md transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                Logout
+              </button>
+            </div>
           )}
         </div>
       </div>

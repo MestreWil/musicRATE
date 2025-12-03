@@ -18,10 +18,12 @@ use Illuminate\Support\Facades\Route;
 // ROTAS PÚBLICAS (sem autenticação)
 // =====================================================
 
-// Autenticação OAuth Spotify
-Route::prefix('auth')->group(function () {
+// Autenticação OAuth Spotify (precisa de sessão para OAuth flow)
+Route::prefix('auth')->middleware(['web'])->group(function () {
     Route::get('/spotify', [AuthController::class, 'redirectToSpotify'])->name('auth.spotify');
     Route::get('/callback', [AuthController::class, 'handleSpotifyCallback'])->name('auth.callback');
+    Route::get('/me', [AuthController::class, 'me'])->name('auth.me');
+    Route::post('/logout', [AuthController::class, 'logout'])->name('auth.logout');
 });
 
 // ROTA TEMPORÁRIA - DESENVOLVIMENTO: Criar usuário
@@ -44,6 +46,8 @@ Route::post('/dev/users', function(\Illuminate\Http\Request $request) {
 // Reviews (leitura pública)
 Route::prefix('reviews')->group(function () {
     Route::get('/', [ReviewController::class, 'index'])->name('reviews.index');
+    Route::get('/{targetType}/{targetSpotifyId}', [ReviewController::class, 'byTarget'])->name('reviews.by_target')
+        ->where('targetType', 'album|track|single');
     Route::get('/album/{spotifyAlbumId}', [ReviewController::class, 'byAlbum'])->name('reviews.album');
     Route::get('/stats', [ReviewController::class, 'stats'])->name('reviews.stats');
     Route::get('/{review}', [ReviewController::class, 'show'])->name('reviews.show');
@@ -79,7 +83,7 @@ Route::prefix('spotify')->group(function () {
 // ROTAS AUTENTICADAS (Spotify OAuth)
 // =====================================================
 
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware(['web', 'auth:sanctum'])->group(function () {
     
     // Gerenciamento de token
     Route::prefix('auth')->group(function () {

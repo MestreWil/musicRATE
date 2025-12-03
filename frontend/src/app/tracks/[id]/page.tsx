@@ -1,9 +1,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { getTrack } from '@/lib/spotify';
-import { ReviewCard } from '@/components/ReviewCard';
-import { ReviewForm } from '@/components/ReviewForm';
 import { notFound } from 'next/navigation';
+import { TrackReviewsSection } from './TrackReviewsSection';
 
 interface Params { params: Promise<{ id: string }> }
 
@@ -302,37 +301,16 @@ export default async function TrackDetailPage({ params }: Readonly<Params>) {
 
             {/* Placeholder for future features */}
             <div className="bg-gradient-to-br from-purple-900/20 to-purple-700/10 rounded-lg p-6 border border-purple-800/30">
-              <h3 className="text-lg font-semibold mb-2">Músicas similares</h3>
+              <h3 className="text-lg font-semibold mb-2">Rate this track</h3>
               <p className="text-sm text-neutral-300">
-                Recomendações baseadas nesta faixa estarão disponíveis em breve.
+                Share your thoughts and help others discover great music.
               </p>
             </div>
           </div>
         </div>
 
         {/* Reviews Section */}
-        <section className="mt-12">
-          <h2 className="text-2xl font-bold mb-6">Reviews da Comunidade</h2>
-
-          {/* Review Form */}
-          <div className="mb-8">
-            <ReviewForm entityType="track" entityId={id} />
-          </div>
-
-          {/* Reviews List - Placeholder */}
-          <div className="grid md:grid-cols-2 gap-4">
-            <ReviewCard 
-              author="MusicLover" 
-              rating={5} 
-              text="Faixa incrível! A produção é impecável e a melodia fica na cabeça." 
-            />
-            <ReviewCard 
-              author="Ouvinte" 
-              rating={4} 
-              text="Muito boa! Um dos destaques do álbum." 
-            />
-          </div>
-        </section>
+        <TrackReviewsSection trackId={id} />
       </div>
     </div>
   );
