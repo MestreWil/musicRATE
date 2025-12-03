@@ -252,8 +252,9 @@ Este projeto está sob a licença MIT.
 
 Projeto desenvolvido como trabalho acadêmico para o Senac.
 
-Desenvolvedor FrontEnd: Thiago Schiedeck Dias
-Desenvolvedor Backend: William Tavares de Moura
+## Desenvolvedor FrontEnd: Thiago Schiedeck Dias 
+
+## Desenvolvedor Backend: William Tavares de Moura
 
 ---
 
