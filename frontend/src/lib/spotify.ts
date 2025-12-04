@@ -237,3 +237,28 @@ export async function getCategories(limit = 20): Promise<Paginated<any>> {
     offset: response.offset || 0
   };
 }
+
+/**
+ * Obtém tracks trending (com mais reviews)
+ */
+export async function getTrendingTracks(limit = 12): Promise<Array<{
+  spotify_data: Track;
+  reviews_count: number;
+  avg_rating: number;
+}>> {
+  const response = await apiGet<any>(`/reviews/trending/tracks?limit=${limit}`);
+  return response || [];
+}
+
+/**
+ * Obtém albums trending (com mais reviews)
+ */
+export async function getTrendingAlbums(limit = 12): Promise<Array<{
+  spotify_data: Album;
+  reviews_count: number;
+  avg_rating: number;
+}>> {
+  const response = await apiGet<any>(`/reviews/trending/albums?limit=${limit}`);
+  return response || [];
+}
+

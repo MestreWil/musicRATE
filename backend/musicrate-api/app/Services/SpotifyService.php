@@ -191,19 +191,48 @@ class SpotifyService
     }
 
     /**
-     * Obtém novos lançamentos (featured)
+     * Obtém novos lançamentos (filtrados por popularidade máxima)
      */
-    public function getNewReleases(int $limit = 20): ?array
+    public function getNewReleases(int $limit = 20, ?int $maxPopularity = null): ?array
     {
-        $cacheKey = "spotify_new_releases_{$limit}";
+        $cacheKey = "spotify_new_releases_{$limit}_pop_" . ($maxPopularity ?? 'all');
 
-        return Cache::remember($cacheKey, 1800, function () use ($limit) { // 30 min
+        return Cache::remember($cacheKey, 1800, function () use ($limit, $maxPopularity) { // 30 min
+            // Buscar mais itens para compensar filtro
+            $fetchLimit = $maxPopularity ? min($limit * 3, 50) : $limit;
+            
             $response = $this->makeRequest('GET', '/browse/new-releases', [
-                'limit' => $limit,
+                'limit' => $fetchLimit,
                 'country' => 'BR',
             ]);
 
-            return $response['success'] ? $response['data']['albums'] : null;
+            if (!$response['success'] || !isset($response['data']['albums'])) {
+                return null;
+            }
+
+            $albums = $response['data']['albums'];
+
+            // Filtrar por popularidade se especificado
+            if ($maxPopularity !== null && isset($albums['items'])) {
+                $albums['items'] = array_filter($albums['items'], function($album) use ($maxPopularity) {
+                    // Verificar popularidade dos artistas
+                    if (!empty($album['artists'])) {
+                        foreach ($album['artists'] as $artist) {
+                            // Buscar dados completos do artista para pegar popularidade
+                            $artistData = $this->getArtist($artist['id']);
+                            if ($artistData && isset($artistData['popularity'])) {
+                                return $artistData['popularity'] <= $maxPopularity;
+                            }
+                        }
+                    }
+                    return true; // Manter se não tiver dados de popularidade
+                });
+
+                // Re-indexar array e limitar ao número solicitado
+                $albums['items'] = array_values(array_slice($albums['items'], 0, $limit));
+            }
+
+            return $albums;
         });
     }
 

@@ -2,12 +2,13 @@
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-import { getNewReleases, searchAlbums, searchArtists, getCategories } from '@/lib/spotify';
+import { getNewReleases, searchAlbums, searchArtists, getCategories, getTrendingTracks, getTrendingAlbums } from '@/lib/spotify';
 import { GenreBadge } from '@/components/GenreBadge';
 import { HorizontalScroll } from '@/components/HorizontalScroll';
 import { AlbumCard } from '@/components/AlbumCard';
 import { ArtistCard } from '@/components/ArtistCard';
 import { HeroCarousel } from '@/components/HeroCarousel';
+import TrackCard from '@/components/TrackCard';
 
 export default async function Home() {
   // Buscar dados reais da API do Spotify
@@ -15,12 +16,14 @@ export default async function Home() {
   let artists: { items: any[] } = { items: [] };
   let albumSearch: { items: any[] } = { items: [] };
   let categories: { items: any[] } = { items: [] };
+  let trendingTracks: any[] = [];
+  let trendingAlbums: any[] = [];
 
   try {
     // Buscar dados com foco em artistas independentes/menores
     // Estratégia: buscar por gêneros indie e filtrar por popularidade
     const results = await Promise.allSettled([
-      getNewReleases(50), // Novos lançamentos
+      getNewReleases(50), // Novos lançamentos (agora com filtro de popularidade <= 65)
       // Buscar artistas de diferentes gêneros indie/underground
       Promise.all([
         searchArtists('indie', 15),
@@ -30,6 +33,8 @@ export default async function Home() {
       ]),
       searchAlbums('indie', 30), // Álbuns indie
       getCategories(10), // Categorias/gêneros
+      getTrendingTracks(12), // Tracks com mais reviews
+      getTrendingAlbums(12), // Albums com mais reviews
     ]);
 
     if (results[0].status === 'fulfilled') {
@@ -86,6 +91,20 @@ export default async function Home() {
       console.log('✅ Categories:', categories.items?.length || 0, 'items');
     } else {
       console.error('❌ Categories failed:', results[3].reason);
+    }
+
+    if (results[4].status === 'fulfilled') {
+      trendingTracks = results[4].value;
+      console.log('✅ Trending Tracks:', trendingTracks.length || 0, 'items');
+    } else {
+      console.error('❌ Trending Tracks failed:', results[4].reason);
+    }
+
+    if (results[5].status === 'fulfilled') {
+      trendingAlbums = results[5].value;
+      console.log('✅ Trending Albums:', trendingAlbums.length || 0, 'items');
+    } else {
+      console.error('❌ Trending Albums failed:', results[5].reason);
     }
   } catch (error) {
     console.error('Erro ao carregar dados da home:', error);
@@ -230,6 +249,51 @@ export default async function Home() {
               slug={category.name.toLowerCase().replace(/\s+/g, '-')}
               icons={category.icons}
             />
+          ))}
+        </HorizontalScroll>
+      )}
+
+      {/* Trending Tracks - Faixas com mais reviews */}
+      {trendingTracks.length > 0 && (
+        <HorizontalScroll title="Trending Tracks">
+          {trendingTracks.map((item: any) => (
+            <div key={item.spotify_data.id} className="relative">
+              <TrackCard 
+                track={{
+                  id: item.spotify_data.id,
+                  name: item.spotify_data.name,
+                  image: item.spotify_data.album?.image || item.spotify_data.image,
+                  artists: item.spotify_data.artists || [],
+                  album: item.spotify_data.album,
+                  durationMs: item.spotify_data.durationMs || item.spotify_data.duration_ms || 0,
+                  previewUrl: item.spotify_data.previewUrl || item.spotify_data.preview_url,
+                }}
+              />
+              <div className="absolute top-2 right-2 bg-black/80 backdrop-blur-sm px-2 py-1 rounded-full text-xs">
+                ⭐ {item.avg_rating} • {item.reviews_count} reviews
+              </div>
+            </div>
+          ))}
+        </HorizontalScroll>
+      )}
+
+      {/* Trending Albums - Álbuns com mais reviews */}
+      {trendingAlbums.length > 0 && (
+        <HorizontalScroll title="Trending Albums">
+          {trendingAlbums.map((item: any) => (
+            <div key={item.spotify_data.id} className="relative">
+              <AlbumCard 
+                id={item.spotify_data.id}
+                name={item.spotify_data.name}
+                image={item.spotify_data.image}
+                artists={item.spotify_data.artists || []}
+                releaseDate={item.spotify_data.releaseDate}
+                totalTracks={item.spotify_data.totalTracks}
+              />
+              <div className="absolute top-2 right-2 bg-black/80 backdrop-blur-sm px-2 py-1 rounded-full text-xs">
+                ⭐ {item.avg_rating} • {item.reviews_count} reviews
+              </div>
+            </div>
           ))}
         </HorizontalScroll>
       )}

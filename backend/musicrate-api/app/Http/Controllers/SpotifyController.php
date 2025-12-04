@@ -252,11 +252,12 @@ class SpotifyController extends Controller
     }
 
     /**
-     * Novos lançamentos
+     * Novos lançamentos (com filtro de popularidade para artistas menos conhecidos)
      */
     public function getNewReleases(Request $request): JsonResponse
     {
         $limit = $request->input('limit', 20);
+        $maxPopularity = 65; // Filtrar artistas com popularidade <= 65
         
         $token = $this->getPublicToken();
         if (!$token) {
@@ -265,7 +266,7 @@ class SpotifyController extends Controller
 
         $releases = $this->spotifyService
             ->setAccessToken($token)
-            ->getNewReleases($limit);
+            ->getNewReleases($limit, $maxPopularity);
 
         return response()->json($releases ?? ['items' => []]);
     }

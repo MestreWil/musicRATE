@@ -40,6 +40,25 @@ Route::get('/health', function() {
     }
 });
 
+// Debug CORS - verificar configuração
+Route::get('/debug/cors', function(\Illuminate\Http\Request $request) {
+    $origin = $request->header('Origin');
+    $allowedOrigins = config('cors.allowed_origins');
+    $frontendUrl = env('FRONTEND_URL');
+    
+    return response()->json([
+        'request_origin' => $origin,
+        'frontend_url_env' => $frontendUrl,
+        'allowed_origins' => $allowedOrigins,
+        'is_allowed' => in_array($origin, $allowedOrigins) || in_array($frontendUrl, $allowedOrigins),
+        'cors_config' => [
+            'supports_credentials' => config('cors.supports_credentials'),
+            'allowed_methods' => config('cors.allowed_methods'),
+            'allowed_headers' => config('cors.allowed_headers'),
+        ]
+    ]);
+});
+
 // Autenticação OAuth Spotify (precisa de sessão para OAuth flow)
 Route::prefix('auth')->middleware(['web'])->group(function () {
     Route::get('/spotify', [AuthController::class, 'redirectToSpotify'])->name('auth.spotify');
@@ -128,6 +147,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 Route::prefix('reviews')->group(function () {
     Route::get('/', [ReviewController::class, 'index'])->name('reviews.index');
     Route::get('/stats', [ReviewController::class, 'stats'])->name('reviews.stats');
+    Route::get('/trending/tracks', [ReviewController::class, 'trendingTracks'])->name('reviews.trending.tracks');
+    Route::get('/trending/albums', [ReviewController::class, 'trendingAlbums'])->name('reviews.trending.albums');
     Route::get('/album/{spotifyAlbumId}', [ReviewController::class, 'byAlbum'])->name('reviews.album');
     Route::get('/user/{userId}', [ReviewController::class, 'byUserId'])->name('reviews.by_user_id');
     Route::get('/{targetType}/{targetSpotifyId}', [ReviewController::class, 'byTarget'])->name('reviews.by_target')

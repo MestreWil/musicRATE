@@ -315,4 +315,77 @@ class ReviewController extends Controller
         }
         return $distribution;
     }
+
+    /**
+     * Tracks com mais reviews (trending)
+     */
+    public function trendingTracks(Request $request): JsonResponse
+    {
+        $limit = $request->input('limit', 12);
+        
+        $trending = Review::where('target_type', 'track')
+            ->where('active', 'Y')
+            ->selectRaw('target_spotify_id, COUNT(*) as reviews_count, AVG(rating) as avg_rating')
+            ->groupBy('target_spotify_id')
+            ->orderByDesc('reviews_count')
+            ->limit($limit)
+            ->get();
+
+        // Buscar dados do Spotify para cada track
+        $tracks = $trending->map(function ($item) {
+            try {
+                $trackData = $this->spotifyService->getTrack($item->target_spotify_id);
+                return [
+                    'spotify_data' => $trackData,
+                    'reviews_count' => $item->reviews_count,
+                    'avg_rating' => round($item->avg_rating, 1),
+                ];
+            } catch (\Exception $e) {
+                \Log::warning('Failed to fetch track data', [
+                    'spotify_id' => $item->target_spotify_id,
+                    'error' => $e->getMessage()
+                ]);
+                return null;
+            }
+        })->filter(); // Remove nulls
+
+        return response()->json($tracks->values());
+    }
+
+    /**
+     * Albums com mais reviews (trending)
+     */
+    public function trendingAlbums(Request $request): JsonResponse
+    {
+        $limit = $request->input('limit', 12);
+        
+        $trending = Review::where('target_type', 'album')
+            ->where('active', 'Y')
+            ->selectRaw('target_spotify_id, COUNT(*) as reviews_count, AVG(rating) as avg_rating')
+            ->groupBy('target_spotify_id')
+            ->orderByDesc('reviews_count')
+            ->limit($limit)
+            ->get();
+
+        // Buscar dados do Spotify para cada album
+        $albums = $trending->map(function ($item) {
+            try {
+                $albumData = $this->spotifyService->getAlbum($item->target_spotify_id);
+                return [
+                    'spotify_data' => $albumData,
+                    'reviews_count' => $item->reviews_count,
+                    'avg_rating' => round($item->avg_rating, 1),
+                ];
+            } catch (\Exception $e) {
+                \Log::warning('Failed to fetch album data', [
+                    'spotify_id' => $item->target_spotify_id,
+                    'error' => $e->getMessage()
+                ]);
+                return null;
+            }
+        })->filter(); // Remove nulls
+
+        return response()->json($albums->values());
+    }
 }
+
