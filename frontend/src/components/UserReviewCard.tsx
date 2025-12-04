@@ -8,11 +8,11 @@ interface UserReviewCardProps {
     id: string;
     target_type: 'album' | 'track' | 'single';
     target_spotify_id: string;
-    album_name: string;
-    artist_name: string;
-    album_image_url: string | null;
+    album_name?: string;
+    artist_name?: string;
+    album_image_url?: string | null;
     rating: number;
-    review_text: string | null;
+    review_text?: string | null;
     created_at: string;
   };
 }
@@ -52,7 +52,7 @@ export function UserReviewCard({ review }: UserReviewCardProps) {
             {review.album_image_url ? (
               <Image
                 src={review.album_image_url}
-                alt={review.album_name}
+                alt={review.album_name || 'Album cover'}
                 width={96}
                 height={96}
                 className="w-full h-full object-cover"
@@ -78,10 +78,10 @@ export function UserReviewCard({ review }: UserReviewCardProps) {
               </div>
               <Link href={getTargetUrl()} className="hover:text-red-500 transition-colors">
                 <h3 className="font-semibold text-neutral-100 text-lg truncate">
-                  {review.album_name}
+                  {review.album_name || 'Unknown Title'}
                 </h3>
               </Link>
-              <p className="text-neutral-400 text-sm truncate">{review.artist_name}</p>
+              <p className="text-neutral-400 text-sm truncate">{review.artist_name || 'Unknown Artist'}</p>
             </div>
 
             {/* Rating */}

@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/lib/useAuth';
 import { useRouter } from 'next/navigation';
+import { createReview, updateReview } from '@/lib/reviews';
 
 interface ReviewFormProps {
   targetType: 'album' | 'track' | 'single';
@@ -42,39 +43,20 @@ export function ReviewForm({ targetType, targetSpotifyId, existingReview, onSucc
     setSuccess(false);
 
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8000';
-      const baseUrl = process.env.NEXT_PUBLIC_BACKEND_API_BASE_URL || 'http://127.0.0.1:8000/api';
-      
-      // Get CSRF cookie first for Sanctum authentication
-      await fetch(`${backendUrl}/sanctum/csrf-cookie`, {
-        credentials: 'include',
-      });
-      
-      const url = existingReview 
-        ? `${baseUrl}/reviews/${existingReview.id}`
-        : `${baseUrl}/reviews`;
-      
-      const method = existingReview ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({
+      if (existingReview) {
+        // Update existing review
+        await updateReview(existingReview.id, {
+          rating,
+          review_text: reviewText || undefined,
+        });
+      } else {
+        // Create new review
+        await createReview({
           target_type: targetType,
           target_spotify_id: targetSpotifyId,
           rating,
-          review_text: reviewText || null,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to submit review');
+          review_text: reviewText || undefined,
+        });
       }
 
       setSuccess(true);
@@ -87,8 +69,9 @@ export function ReviewForm({ targetType, targetSpotifyId, existingReview, onSucc
         setRating(0);
         setReviewText('');
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+    } catch (err: any) {
+      console.error('Review submission error:', err);
+      setError(err.message || 'An error occurred');
     } finally {
       setSubmitting(false);
     }

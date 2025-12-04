@@ -87,7 +87,7 @@ Route::prefix('spotify')->group(function () {
 // ROTAS AUTENTICADAS (Spotify OAuth)
 // =====================================================
 
-Route::middleware(['web', 'auth:sanctum'])->group(function () {
+Route::middleware(['auth:sanctum'])->group(function () {
     
     // Gerenciamento de token
     Route::prefix('auth')->group(function () {
