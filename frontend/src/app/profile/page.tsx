@@ -101,7 +101,7 @@ export default function UserProfilePage() {
             </div>
 
             {/* User Info & Stats */}
-            <div className="flex-1 pb-4 md:pb-6">
+            <div className="flex-1 pb-4 md:pb-0">
               <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
                 <div>
                   <h1 className="text-3xl md:text-4xl font-bold text-neutral-100 mb-1">

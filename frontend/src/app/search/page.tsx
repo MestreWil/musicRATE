@@ -4,7 +4,7 @@ import SearchResultsClient from './search-results';
 export default function SearchPage() {
   return (
     <Suspense fallback={
-      <div className="bg-black text-white pt-32 px-4 sm:px-6 lg:px-8">
+      <div className="bg-black text-white pt-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="animate-pulse space-y-8">
             <div className="h-8 bg-gray-800 rounded w-1/3 mb-8"></div>

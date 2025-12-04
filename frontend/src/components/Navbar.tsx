@@ -90,7 +90,7 @@ export function Navbar() {
         </button>
 
         {/* Logo */}
-        <Link href="/" className="flex items-center group" aria-label="Página inicial">
+        <Link href="/" className="flex items-center group md:flex-initial flex-1 justify-center md:justify-start" aria-label="Página inicial">
           <Image
             src="/logo.png"
             alt="MusicRate"
@@ -143,21 +143,6 @@ export function Navbar() {
 
         {/* Ações lado direito */}
         <div className="flex items-center gap-6 ml-auto">
-          {/* Notificações */}
-          <button className="relative flex flex-col items-center text-[11px] font-medium hover:text-red-400 transition-colors">
-            <span className="relative">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
-                <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
-              </svg>
-              <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] leading-none px-1.5 py-0.5 rounded-full">2</span>
-            </span>
-            <span className="hidden xl:inline mt-0.5">Notifications</span>
-          </button>
-
-          {/* Divider */}
-          <span className="hidden md:inline h-6 w-px bg-neutral-700" aria-hidden="true" />
-
           {/* Usuário / Avatar / Login */}
           <div className="flex items-center gap-2">
             {loading ? (
@@ -238,12 +223,13 @@ export function Navbar() {
         </div>
       </nav>
 
-      {/* Menu mobile dropdown com transição suave */}
+      {/* Menu mobile dropdown com transição suave - sobrepõe o conteúdo */}
       <div 
         className={`
-          border-t border-neutral-800 bg-neutral-900 overflow-hidden
-          transition-all duration-300 ease-in-out
-          ${openMenu ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'}
+          absolute top-full left-0 right-0
+          border-t border-neutral-800 bg-neutral-900 shadow-2xl
+          transition-all duration-300 ease-in-out z-50
+          ${openMenu ? 'translate-y-0 opacity-100 pointer-events-auto' : '-translate-y-4 opacity-0 pointer-events-none'}
         `}
       >
         <div className="px-4 py-4 space-y-3">

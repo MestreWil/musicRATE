@@ -77,7 +77,7 @@ export default function ArtistsPage() {
     });
 
   return (
-    <div className="bg-black text-white pt-24 pb-16">
+    <div className="bg-black text-white pt-8 pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
@@ -146,7 +146,7 @@ export default function ArtistsPage() {
 
         {/* Artists Grid */}
         {loading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 min-[480px]:grid-cols-2 min-[640px]:grid-cols-2 min-[768px]:grid-cols-3 min-[1024px]:grid-cols-4 min-[1280px]:grid-cols-5 gap-4 sm:gap-6 justify-items-center">
             {[...Array(10)].map((_, i) => (
               <div key={i} className="animate-pulse">
                 <div className="aspect-square rounded-lg bg-neutral-800 mb-3" />
@@ -156,7 +156,7 @@ export default function ArtistsPage() {
             ))}
           </div>
         ) : filteredArtists.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 min-[480px]:grid-cols-2 min-[640px]:grid-cols-2 min-[768px]:grid-cols-3 min-[1024px]:grid-cols-4 min-[1280px]:grid-cols-5 gap-4 sm:gap-6 justify-items-center">
             {filteredArtists.map((artist) => (
               <ArtistCard
                 key={artist.id}

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getTrack } from '@/lib/spotify';
 import { notFound } from 'next/navigation';
 import { TrackReviewsSection } from './TrackReviewsSection';
+import { AlbumActionsBar } from '@/components/AlbumActionsBar';
 
 interface Params { params: Promise<{ id: string }> }
 
@@ -121,51 +122,7 @@ export default async function TrackDetailPage({ params }: Readonly<Params>) {
       </section>
 
       {/* Actions Bar */}
-      <section className="bg-black/40 backdrop-blur-sm border-b border-neutral-800 sticky top-20 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center gap-4">
-            <button 
-              className="flex items-center justify-center w-14 h-14 rounded-full bg-red-600 hover:bg-red-700 hover:scale-105 transition-all shadow-lg"
-              aria-label="Play track"
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
-                <path d="M8 5v14l11-7z"/>
-              </svg>
-            </button>
-
-            <button 
-              className="p-3 rounded-full hover:bg-white/10 transition-colors"
-              aria-label="Adicionar aos favoritos"
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-              </svg>
-            </button>
-
-            <button 
-              className="p-3 rounded-full hover:bg-white/10 transition-colors"
-              aria-label="Adicionar à playlist"
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 5v14M5 12h14"/>
-              </svg>
-            </button>
-
-            <button 
-              className="p-3 rounded-full hover:bg-white/10 transition-colors"
-              aria-label="Compartilhar"
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="18" cy="5" r="3"/>
-                <circle cx="6" cy="12" r="3"/>
-                <circle cx="18" cy="19" r="3"/>
-                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
-                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-              </svg>
-            </button>
-          </div>
-        </div>
-      </section>
+      <AlbumActionsBar />
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

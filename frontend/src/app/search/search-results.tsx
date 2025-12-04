@@ -75,7 +75,7 @@ export default function SearchResultsClient() {
 
   if (loading) {
     return (
-      <div className="bg-black text-white pt-32 px-4 sm:px-6 lg:px-8">
+      <div className="bg-black text-white pt-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-800 rounded w-1/3 mb-8"></div>
@@ -92,7 +92,7 @@ export default function SearchResultsClient() {
 
   if (error) {
     return (
-      <div className="bg-black text-white pt-32 px-4 sm:px-6 lg:px-8">
+      <div className="bg-black text-white pt-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-red-500 mb-4">Erro</h1>
@@ -112,7 +112,7 @@ export default function SearchResultsClient() {
   const hasResults = artists.length > 0 || albums.length > 0 || singles.length > 0 || tracks.length > 0;
 
   return (
-    <div className="bg-black text-white pt-32 px-4 sm:px-6 lg:px-8 pb-16">
+    <div className="bg-black text-white pt-8 px-4 sm:px-6 lg:px-8 pb-16">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-12">
@@ -146,7 +146,7 @@ export default function SearchResultsClient() {
               <h2 className="text-2xl sm:text-3xl font-bold">Artistas</h2>
               <span className="text-gray-400 text-sm">{artists.length} encontrados</span>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 min-[480px]:grid-cols-2 min-[640px]:grid-cols-2 min-[768px]:grid-cols-3 min-[1024px]:grid-cols-4 min-[1280px]:grid-cols-5 gap-4 sm:gap-6 justify-items-center">
               {artists.map((artist) => (
                 <ArtistCard 
                   key={artist.id} 
@@ -169,7 +169,7 @@ export default function SearchResultsClient() {
               <h2 className="text-2xl sm:text-3xl font-bold">Singles</h2>
               <span className="text-gray-400 text-sm">{singles.length} encontrados</span>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 min-[480px]:grid-cols-2 min-[640px]:grid-cols-2 min-[768px]:grid-cols-3 min-[1024px]:grid-cols-4 min-[1280px]:grid-cols-5 gap-4 sm:gap-6 justify-items-center">
               {singles.map((single) => (
                 <AlbumCard 
                   key={single.id}
@@ -192,7 +192,7 @@ export default function SearchResultsClient() {
               <h2 className="text-2xl sm:text-3xl font-bold">Álbuns</h2>
               <span className="text-gray-400 text-sm">{albums.length} encontrados</span>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 min-[480px]:grid-cols-2 min-[640px]:grid-cols-2 min-[768px]:grid-cols-3 min-[1024px]:grid-cols-4 min-[1280px]:grid-cols-5 gap-4 sm:gap-6 justify-items-center">
               {albums.map((album) => (
                 <AlbumCard 
                   key={album.id}

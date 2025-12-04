@@ -12,11 +12,13 @@ function getAuthHeaders(): Record<string, string> {
 }
 
 async function handleResponse<T>(res: Response): Promise<T> {
+  console.log(`[API] Response from ${res.url}:`, res.status, res.statusText);
   if (!res.ok) {
     let message = res.statusText;
     try {
       const data = await res.json();
       message = data.message || message;
+      console.error(`[API] Error response:`, data);
     } catch {}
     const err: ApiError = { status: res.status, message };
     throw err;
@@ -27,6 +29,7 @@ async function handleResponse<T>(res: Response): Promise<T> {
 export async function apiGet<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const url = `${BASE_URL}${path}`;
   const authHeaders = options.auth !== false ? getAuthHeaders() : {};
+  console.log(`[API] GET ${url}`, { hasAuth: Object.keys(authHeaders).length > 0 });
   const res = await fetch(url, {
     ...options,
     method: 'GET',

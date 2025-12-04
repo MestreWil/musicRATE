@@ -6,9 +6,9 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { getArtist, getArtistAlbums, getArtistTopTracks } from '@/lib/spotify';
 import { Artist, Album, Track } from '@/lib/types';
-import { FollowButton } from '@/components/FollowButton';
 import { AlbumCard } from '@/components/AlbumCard';
 import TrackCard from '@/components/TrackCard';
+import { ArtistActionsBar } from '@/components/ArtistActionsBar';
 
 type TabType = 'albums' | 'singles' | 'tracks';
 
@@ -218,33 +218,7 @@ export default function ArtistDetailPage() {
       </section>
 
       {/* Actions Bar */}
-      <section className="bg-black/40 backdrop-blur-sm border-b border-neutral-800 sticky top-20 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center gap-4">
-            <button 
-              className="flex items-center justify-center w-14 h-14 rounded-full bg-red-600 hover:bg-red-700 hover:scale-105 transition-all shadow-lg"
-              aria-label="Play"
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
-                <path d="M8 5v14l11-7z"/>
-              </svg>
-            </button>
-
-            <FollowButton artistId={id} />
-
-            <button 
-              className="p-3 rounded-full hover:bg-white/10 transition-colors"
-              aria-label="Mais opções"
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                <circle cx="5" cy="12" r="2"/>
-                <circle cx="12" cy="12" r="2"/>
-                <circle cx="19" cy="12" r="2"/>
-              </svg>
-            </button>
-          </div>
-        </div>
-      </section>
+      <ArtistActionsBar artistId={id} />
 
       {/* Tabs */}
       <section className="bg-black border-b border-neutral-800">
@@ -291,7 +265,7 @@ export default function ArtistDetailPage() {
           <div>
             <h2 className="text-2xl font-bold mb-6">Álbuns</h2>
             {albums.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
+              <div className="grid grid-cols-1 min-[480px]:grid-cols-2 min-[640px]:grid-cols-2 min-[768px]:grid-cols-3 min-[1024px]:grid-cols-4 min-[1280px]:grid-cols-5 gap-4 sm:gap-6 justify-items-center">
                 {albums.map((album) => (
                   <AlbumCard
                     key={album.id}
@@ -317,7 +291,7 @@ export default function ArtistDetailPage() {
           <div>
             <h2 className="text-2xl font-bold mb-6">Singles e EPs</h2>
             {singles.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
+              <div className="grid grid-cols-1 min-[480px]:grid-cols-2 min-[640px]:grid-cols-2 min-[768px]:grid-cols-3 min-[1024px]:grid-cols-4 min-[1280px]:grid-cols-5 gap-4 sm:gap-6 justify-items-center">
                 {singles.map((single) => (
                   <AlbumCard
                     key={single.id}

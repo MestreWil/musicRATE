@@ -96,7 +96,7 @@ export function HeroCarousel({ slides, autoPlayMs = 5000 }: HeroCarouselProps) {
             </div>
 
             {/* Content */}
-            <div className="absolute inset-0 flex flex-col justify-end p-6 sm:p-8 md:p-12 lg:p-16">
+            <div className="absolute inset-0 flex flex-col justify-end p-6 sm:p-8 md:p-12 lg:p-16 pb-16 sm:pb-20 md:pb-12 lg:pb-16">
               <div className="max-w-2xl space-y-3 md:space-y-4">
                 {/* Type Badge */}
                 <div className="flex items-center gap-2">
@@ -203,7 +203,7 @@ export function HeroCarousel({ slides, autoPlayMs = 5000 }: HeroCarouselProps) {
       </button>
 
       {/* Dots Navigation */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/40 backdrop-blur-sm px-4 py-2 rounded-full">
+      <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/40 backdrop-blur-sm px-4 py-2 rounded-full z-10">
         {slides.map((slide, i) => (
           <button
             key={slide.id}
