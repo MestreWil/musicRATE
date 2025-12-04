@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { ReviewForm } from '@/components/ReviewForm';
+import { config } from '@/lib/config';
 import { ReviewCard } from '@/components/ReviewCard';
 import { useAuth } from '@/lib/useAuth';
 
@@ -36,7 +37,7 @@ export function TrackReviewsSection({ trackId }: TrackReviewsSectionProps) {
 
   const fetchReviews = async () => {
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_BACKEND_API_BASE_URL || 'http://127.0.0.1:8000/api';
+      const baseUrl = config.apiUrl;
       // Usar a rota byTarget que filtra por target_type e target_spotify_id
       const response = await fetch(`${baseUrl}/reviews/track/${trackId}`, {
         credentials: 'include',

@@ -1,6 +1,7 @@
 import { ApiError } from './types';
+import { config } from './config';
 
-const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_API_BASE_URL || 'http://localhost:8000/api';
+const BASE_URL = config.apiUrl;
 
 interface RequestOptions extends RequestInit {
   auth?: boolean; // Incluir token de autenticação

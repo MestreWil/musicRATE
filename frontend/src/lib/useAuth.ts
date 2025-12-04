@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { config } from './config';
 
 interface SpotifyUser {
   id: string;
@@ -110,7 +111,7 @@ export function useAuth() {
       const token = localStorage.getItem('sanctum_token');
       
       if (token) {
-        const baseUrl = process.env.NEXT_PUBLIC_BACKEND_API_BASE_URL || 'http://127.0.0.1:8000/api';
+        const baseUrl = config.apiUrl;
         await fetch(`${baseUrl}/auth/logout`, {
           method: 'POST',
           headers: {

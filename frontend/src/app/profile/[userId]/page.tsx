@@ -7,6 +7,7 @@ import { UserReviewCard } from '@/components/UserReviewCard';
 import { FollowButton } from '@/components/FollowButton';
 import { apiGet } from '@/lib/api';
 import { getSessionClient } from '@/lib/auth';
+import { config } from '@/lib/config';
 
 interface Review {
   id: string;
@@ -72,7 +73,7 @@ export default function UserProfilePage() {
         setLoading(true);
         setError(null);
 
-        const baseUrl = process.env.NEXT_PUBLIC_BACKEND_API_BASE_URL || 'http://127.0.0.1:8000/api';
+        const baseUrl = config.apiUrl;
         
         // Buscar dados do usuário
         const userResponse = await fetch(`${baseUrl}/users/${userId}`, {

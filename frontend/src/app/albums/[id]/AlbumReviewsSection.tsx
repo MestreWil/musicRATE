@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { ReviewForm } from '@/components/ReviewForm';
+import { config } from '@/lib/config';
 import { ReviewCard } from '@/components/ReviewCard';
 import { useAuth } from '@/lib/useAuth';
 
@@ -36,7 +37,7 @@ export function AlbumReviewsSection({ albumId }: AlbumReviewsSectionProps) {
 
   const fetchReviews = async () => {
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_BACKEND_API_BASE_URL || 'http://127.0.0.1:8000/api';
+      const baseUrl = config.apiUrl;
       const response = await fetch(`${baseUrl}/reviews/album/${albumId}`, {
         credentials: 'include',
         headers: {

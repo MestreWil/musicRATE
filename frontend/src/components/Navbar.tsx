@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useSearchParams } from 'next/navigation';
+import { config } from '@/lib/config';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/useAuth';
 import { NotificationsDropdown } from './NotificationsDropdown';
@@ -50,7 +51,7 @@ export function Navbar() {
 
   const handleLogout = async () => {
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_BACKEND_API_BASE_URL || 'http://127.0.0.1:8000/api';
+      const baseUrl = config.apiUrl;
       await fetch(`${baseUrl}/auth/logout`, {
         method: 'POST',
         credentials: 'include',

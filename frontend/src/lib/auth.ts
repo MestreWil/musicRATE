@@ -1,6 +1,8 @@
 // Simple auth helpers optimized for backend OAuth integration
 // NOTE: Do not store any Spotify secrets in the frontend.
 
+import { config } from './config';
+
 export type Session = {
   user: {
     id: string;
@@ -32,7 +34,7 @@ export function getSessionClient(): Session {
 
 // Build the backend OAuth start URL with "redirect_uri" (frontend callback) and optional return path.
 export function getSpotifyLoginUrl(returnTo?: string): string {
-  const base = process.env.NEXT_PUBLIC_BACKEND_API_BASE_URL || 'http://127.0.0.1:8000/api';
+  const base = config.apiUrl;
   // Frontend callback path (the backend should redirect here after finishing OAuth and setting cookies)
   const frontendCallback =
     typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : '/auth/callback';
