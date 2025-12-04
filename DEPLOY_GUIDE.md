@@ -97,6 +97,9 @@ APP_KEY=base64:SuaChaveAqui==
 # Railway fornece automaticamente:
 # DATABASE_URL, PGHOST, PGPORT, PGDATABASE, PGUSER, PGPASSWORD
 
+# PORT (Railway injeta automaticamente, mas defina se necessário)
+PORT=8080
+
 # SPOTIFY (pegue em https://developer.spotify.com/dashboard)
 SPOTIFY_CLIENT_ID=seu_client_id
 SPOTIFY_CLIENT_SECRET=seu_client_secret
