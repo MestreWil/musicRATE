@@ -257,22 +257,10 @@ export default async function Home() {
       {trendingTracks.length > 0 && (
         <HorizontalScroll title="Trending Tracks">
           {trendingTracks.map((item: any) => (
-            <div key={item.spotify_data.id} className="relative">
-              <TrackCard 
-                track={{
-                  id: item.spotify_data.id,
-                  name: item.spotify_data.name,
-                  image: item.spotify_data.album?.image || item.spotify_data.image,
-                  artists: item.spotify_data.artists || [],
-                  album: item.spotify_data.album,
-                  durationMs: item.spotify_data.durationMs || item.spotify_data.duration_ms || 0,
-                  previewUrl: item.spotify_data.previewUrl || item.spotify_data.preview_url,
-                }}
-              />
-              <div className="absolute top-2 right-2 bg-black/80 backdrop-blur-sm px-2 py-1 rounded-full text-xs">
-                ⭐ {item.avg_rating} • {item.reviews_count} reviews
-              </div>
-            </div>
+            <TrackCard 
+              key={item.spotify_data.id}
+              track={item.spotify_data}
+            />
           ))}
         </HorizontalScroll>
       )}
@@ -281,19 +269,15 @@ export default async function Home() {
       {trendingAlbums.length > 0 && (
         <HorizontalScroll title="Trending Albums">
           {trendingAlbums.map((item: any) => (
-            <div key={item.spotify_data.id} className="relative">
-              <AlbumCard 
-                id={item.spotify_data.id}
-                name={item.spotify_data.name}
-                image={item.spotify_data.image}
-                artists={item.spotify_data.artists || []}
-                releaseDate={item.spotify_data.releaseDate}
-                totalTracks={item.spotify_data.totalTracks}
-              />
-              <div className="absolute top-2 right-2 bg-black/80 backdrop-blur-sm px-2 py-1 rounded-full text-xs">
-                ⭐ {item.avg_rating} • {item.reviews_count} reviews
-              </div>
-            </div>
+            <AlbumCard 
+              key={item.spotify_data.id}
+              id={item.spotify_data.id}
+              name={item.spotify_data.name}
+              image={item.spotify_data.image}
+              artists={item.spotify_data.artists || []}
+              releaseDate={item.spotify_data.releaseDate}
+              totalTracks={item.spotify_data.totalTracks}
+            />
           ))}
         </HorizontalScroll>
       )}

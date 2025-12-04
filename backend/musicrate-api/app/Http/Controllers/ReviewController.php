@@ -331,12 +331,29 @@ class ReviewController extends Controller
             ->limit($limit)
             ->get();
 
-        // Buscar dados do Spotify para cada track
+        // Buscar dados do Spotify para cada track e normalizar
         $tracks = $trending->map(function ($item) {
             try {
                 $trackData = $this->spotifyService->getTrack($item->target_spotify_id);
+                
+                // Normalizar dados da track
+                $normalized = [
+                    'id' => $trackData['id'],
+                    'name' => $trackData['name'],
+                    'image' => $trackData['album']['images'][0]['url'] ?? null,
+                    'durationMs' => $trackData['duration_ms'] ?? 0,
+                    'artists' => array_map(fn($a) => ['id' => $a['id'], 'name' => $a['name']], $trackData['artists'] ?? []),
+                    'album' => [
+                        'id' => $trackData['album']['id'],
+                        'name' => $trackData['album']['name'],
+                        'image' => $trackData['album']['images'][0]['url'] ?? null,
+                    ],
+                    'previewUrl' => $trackData['preview_url'] ?? null,
+                    'popularity' => $trackData['popularity'] ?? 0,
+                ];
+                
                 return [
-                    'spotify_data' => $trackData,
+                    'spotify_data' => $normalized,
                     'reviews_count' => $item->reviews_count,
                     'avg_rating' => round($item->avg_rating, 1),
                 ];
@@ -367,12 +384,23 @@ class ReviewController extends Controller
             ->limit($limit)
             ->get();
 
-        // Buscar dados do Spotify para cada album
+        // Buscar dados do Spotify para cada album e normalizar
         $albums = $trending->map(function ($item) {
             try {
                 $albumData = $this->spotifyService->getAlbum($item->target_spotify_id);
+                
+                // Normalizar dados do álbum
+                $normalized = [
+                    'id' => $albumData['id'],
+                    'name' => $albumData['name'],
+                    'image' => $albumData['images'][0]['url'] ?? null,
+                    'artists' => array_map(fn($a) => ['id' => $a['id'], 'name' => $a['name']], $albumData['artists'] ?? []),
+                    'releaseDate' => $albumData['release_date'] ?? null,
+                    'totalTracks' => $albumData['total_tracks'] ?? 0,
+                ];
+                
                 return [
-                    'spotify_data' => $albumData,
+                    'spotify_data' => $normalized,
                     'reviews_count' => $item->reviews_count,
                     'avg_rating' => round($item->avg_rating, 1),
                 ];
