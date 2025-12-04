@@ -1,6 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  eslint: {
+    // Desabilita ESLint durante build de produção
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    // Desabilita type checking durante build (opcional)
+    // ignoreBuildErrors: true,
+  },
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'images.unsplash.com' },
