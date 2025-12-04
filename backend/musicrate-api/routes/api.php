@@ -85,10 +85,27 @@ Route::prefix('reviews')->group(function () {
     Route::get('/', [ReviewController::class, 'index'])->name('reviews.index');
     Route::get('/stats', [ReviewController::class, 'stats'])->name('reviews.stats');
     Route::get('/album/{spotifyAlbumId}', [ReviewController::class, 'byAlbum'])->name('reviews.album');
+    Route::get('/user/{userId}', [ReviewController::class, 'byUserId'])->name('reviews.by_user_id');
     Route::get('/{targetType}/{targetSpotifyId}', [ReviewController::class, 'byTarget'])->name('reviews.by_target')
         ->where('targetType', 'album|track|single');
     // Esta deve ser a última porque é genérica
     Route::get('/{review}', [ReviewController::class, 'show'])->name('reviews.show');
+});
+
+// Perfis públicos de usuários
+Route::prefix('users')->group(function () {
+    Route::get('/{userId}', function($userId) {
+        $user = \App\Models\User::findOrFail($userId);
+        
+        return response()->json([
+            'id' => $user->id,
+            'name' => $user->display_name ?? $user->email ?? 'User',
+            'username' => $user->spotify_id ?? $user->display_name ?? $user->email ?? 'user',
+            'avatar' => $user->avatar_url,
+            'created_at' => $user->created_at,
+            'reviews_count' => $user->reviews()->count(),
+        ]);
+    })->name('users.show');
 });
 
 // Spotify API (acesso público com Client Credentials)

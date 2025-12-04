@@ -98,6 +98,20 @@ class ReviewController extends Controller
     }
 
     /**
+     * Lista reviews de um usuário específico (público)
+     */
+    public function byUserId(string $userId): JsonResponse
+    {
+        $reviews = Review::with('user:id,display_name,email,avatar_url')
+            ->where('user_id', $userId)
+            ->where('active', 'Y')
+            ->latest()
+            ->paginate(20);
+
+        return response()->json($reviews);
+    }
+
+    /**
      * Cria uma nova review
      */
     public function store(Request $request): JsonResponse

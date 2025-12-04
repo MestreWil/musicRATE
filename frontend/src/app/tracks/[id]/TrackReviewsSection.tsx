@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { ReviewForm } from '@/components/ReviewForm';
 import { ReviewCard } from '@/components/ReviewCard';
+import { useAuth } from '@/lib/useAuth';
 
 interface Review {
   id: string;
@@ -31,6 +32,7 @@ export function TrackReviewsSection({ trackId }: TrackReviewsSectionProps) {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [stats, setStats] = useState<ReviewStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
   const fetchReviews = async () => {
     try {
@@ -126,6 +128,8 @@ export function TrackReviewsSection({ trackId }: TrackReviewsSectionProps) {
             <ReviewCard
               key={review.id}
               author={review.user.display_name}
+              authorId={review.user.id}
+              currentUserId={user?.id}
               avatar={review.user.avatar_url || undefined}
               rating={review.rating}
               text={review.review_text || 'No review text provided.'}
