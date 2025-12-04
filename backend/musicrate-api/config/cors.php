@@ -19,15 +19,18 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => [
-        env('FRONTEND_URL', 'http://localhost:3000'),
+    'allowed_origins' => array_filter([
+        env('FRONTEND_URL'),
+        env('APP_URL'),
         'http://127.0.0.1:3000',
         'http://localhost:3000',
         'http://127.0.0.1:8000',
         'http://localhost:8000',
-    ],
+    ]),
 
-    'allowed_origins_patterns' => [],
+    'allowed_origins_patterns' => [
+        '/^https:\/\/music-rate.*\.vercel\.app$/', // Permite todos os deploys preview do Vercel
+    ],
 
     'allowed_headers' => ['*'],
 
