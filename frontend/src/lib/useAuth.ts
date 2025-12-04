@@ -40,10 +40,9 @@ export function useAuth() {
         return;
       }
 
-      const baseUrl = process.env.NEXT_PUBLIC_BACKEND_API_BASE_URL || 'http://127.0.0.1:8000/api';
-      console.log('🌐 Calling:', `${baseUrl}/auth/me`);
+      console.log('🌐 Calling:', `${config.apiUrl}/auth/me`);
       
-      const response = await fetch(`${baseUrl}/auth/me`, {
+      const response = await fetch(`${config.apiUrl}/auth/me`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
