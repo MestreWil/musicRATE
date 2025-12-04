@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Suspense } from "react";
 import "./globals.css";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
@@ -30,7 +31,9 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}>
         <AudioProvider>
-          <Navbar />
+          <Suspense fallback={<div className="h-16 bg-gray-900" />}>
+            <Navbar />
+          </Suspense>
           <main className="flex-1 pb-24">{children}</main>
           <Footer />
           <AudioPlayer />
