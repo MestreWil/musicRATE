@@ -3,6 +3,9 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\SpotifyController;
+use App\Http\Controllers\UserFollowController;
+use App\Http\Controllers\ArtistFollowController;
+use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -17,6 +20,25 @@ use Illuminate\Support\Facades\Route;
 // =====================================================
 // ROTAS PÚBLICAS (sem autenticação)
 // =====================================================
+
+// Health check para Railway/Render
+Route::get('/health', function() {
+    try {
+        // Testa conexão com banco
+        \Illuminate\Support\Facades\DB::connection()->getPdo();
+        return response()->json([
+            'status' => 'ok',
+            'database' => 'connected',
+            'timestamp' => now()->toIso8601String()
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'database' => 'disconnected',
+            'error' => $e->getMessage()
+        ], 503);
+    }
+});
 
 // Autenticação OAuth Spotify (precisa de sessão para OAuth flow)
 Route::prefix('auth')->middleware(['web'])->group(function () {
@@ -78,6 +100,28 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::put('/{review}', [ReviewController::class, 'update'])->name('reviews.update');
         Route::delete('/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
     });
+
+    // User Follow/Unfollow
+    Route::prefix('users')->group(function () {
+        Route::post('/{userId}/follow', [UserFollowController::class, 'follow'])->name('users.follow');
+        Route::delete('/{userId}/unfollow', [UserFollowController::class, 'unfollow'])->name('users.unfollow');
+        Route::get('/{userId}/check-following', [UserFollowController::class, 'checkFollowing'])->name('users.check_following');
+    });
+
+    // Artist Follow/Unfollow
+    Route::prefix('artists')->group(function () {
+        Route::post('/{artistSpotifyId}/follow', [ArtistFollowController::class, 'follow'])->name('artists.follow');
+        Route::delete('/{artistSpotifyId}/unfollow', [ArtistFollowController::class, 'unfollow'])->name('artists.unfollow');
+        Route::get('/{artistSpotifyId}/check-following', [ArtistFollowController::class, 'checkFollowing'])->name('artists.check_following');
+    });
+
+    // Notifications
+    Route::prefix('notifications')->group(function () {
+        Route::get('/', [NotificationController::class, 'index'])->name('notifications.index');
+        Route::get('/unread-count', [NotificationController::class, 'unreadCount'])->name('notifications.unread_count');
+        Route::put('/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.mark_read');
+        Route::post('/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark_all_read');
+    });
 });
 
 // Reviews (leitura pública)
@@ -94,6 +138,11 @@ Route::prefix('reviews')->group(function () {
 
 // Perfis públicos de usuários
 Route::prefix('users')->group(function () {
+    Route::get('/{userId}/followers', [UserFollowController::class, 'followers'])->name('users.followers');
+    Route::get('/{userId}/following', [UserFollowController::class, 'following'])->name('users.following');
+    Route::get('/{userId}/following-total', [UserFollowController::class, 'followingTotal'])->name('users.following_total');
+    Route::get('/{userId}/artists', [ArtistFollowController::class, 'followedArtists'])->name('users.followed_artists');
+    
     Route::get('/{userId}', function($userId) {
         $user = \App\Models\User::findOrFail($userId);
         

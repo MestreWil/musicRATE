@@ -9,13 +9,25 @@ export type Session = {
   };
 } | null;
 
-// Detects a session using a backend-set cookie (e.g., `mr_session=<token>`)
-// This is a harmless stub; real session fetching should come from the backend.
+// Detects a session using localStorage sanctum_token
 export function getSessionClient(): Session {
-  if (typeof document === 'undefined') return null;
-  const hasCookie = document.cookie.split('; ').some((c) => c.startsWith('mr_session='));
-  if (!hasCookie) return null;
-  return { user: { id: 'me', name: 'You' } };
+  if (typeof window === 'undefined') return null;
+  const token = localStorage.getItem('sanctum_token');
+  if (!token) return null;
+  
+  // Try to get user data from localStorage cache
+  const userDataStr = localStorage.getItem('user_data');
+  if (userDataStr) {
+    try {
+      const userData = JSON.parse(userDataStr);
+      return { user: { id: userData.id, name: userData.name, avatar: userData.avatar } };
+    } catch (e) {
+      console.error('Failed to parse user_data:', e);
+    }
+  }
+  
+  // Fallback: token exists but no user data cached
+  return { user: { id: 'unknown', name: 'User' } };
 }
 
 // Build the backend OAuth start URL with "redirect_uri" (frontend callback) and optional return path.

@@ -59,6 +59,10 @@ export function useAuth() {
         
         if (data.authenticated && data.user) {
           console.log('✅ User authenticated:', data.user.name);
+          
+          // Cache user data in localStorage for getSessionClient()
+          localStorage.setItem('user_data', JSON.stringify(data.user));
+          
           setAuthState({
             authenticated: true,
             user: data.user,
@@ -71,6 +75,7 @@ export function useAuth() {
       // Token inválido, remover
       console.warn('⚠️ Token invalid, removing...');
       localStorage.removeItem('sanctum_token');
+      localStorage.removeItem('user_data');
       setAuthState({
         authenticated: false,
         user: null,
@@ -79,6 +84,7 @@ export function useAuth() {
     } catch (error) {
       console.error('❌ Auth check failed:', error);
       localStorage.removeItem('sanctum_token');
+      localStorage.removeItem('user_data');
       setAuthState({
         authenticated: false,
         user: null,
@@ -117,6 +123,7 @@ export function useAuth() {
       console.error('Logout failed:', error);
     } finally {
       localStorage.removeItem('sanctum_token');
+      localStorage.removeItem('user_data');
       setAuthState({
         authenticated: false,
         user: null,

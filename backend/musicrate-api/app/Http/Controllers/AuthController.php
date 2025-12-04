@@ -291,7 +291,8 @@ class AuthController extends Controller
         return response()->json([
             'authenticated' => true,
             'user' => [
-                'id' => $user->spotify_id,
+                'id' => $user->id, // UUID do banco de dados
+                'spotify_id' => $user->spotify_id, // ID do Spotify
                 'name' => $user->display_name,
                 'email' => $user->email,
                 'avatar' => $user->avatar_url,

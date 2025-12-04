@@ -57,4 +57,54 @@ class User extends Authenticatable
             ->where('active', 'Y')
             ->exists();
     }
+
+    /**
+     * Get users that this user follows
+     */
+    public function following()
+    {
+        return $this->belongsToMany(
+            User::class,
+            'user_followers',
+            'follower_id',
+            'followed_id'
+        )->wherePivot('active', 'Y');
+    }
+
+    /**
+     * Get users that follow this user
+     */
+    public function followers()
+    {
+        return $this->belongsToMany(
+            User::class,
+            'user_followers',
+            'followed_id',
+            'follower_id'
+        )->wherePivot('active', 'Y');
+    }
+
+    /**
+     * Check if this user follows another user
+     */
+    public function isFollowing(string $userId): bool
+    {
+        return $this->following()->where('users.id', $userId)->exists();
+    }
+
+    /**
+     * Get all notifications for this user
+     */
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class);
+    }
+
+    /**
+     * Get unread notifications count
+     */
+    public function unreadNotificationsCount(): int
+    {
+        return $this->notifications()->unread()->count();
+    }
 }

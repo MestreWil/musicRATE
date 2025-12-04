@@ -1,383 +1,394 @@
-# 🚀 Guia de Deploy - MusicRATE
+# 🚀 GUIA COMPLETO DE DEPLOY - MusicRATE
 
-## 📋 Checklist de Preparação para Produção
+## 📦 Estrutura do Projeto
+- **Backend**: Laravel 12 + PostgreSQL
+- **Frontend**: Next.js 15 + React 19
+- **Autenticação**: Spotify OAuth + Laravel Sanctum
+- **Deploy**: Railway (backend + DB) + Vercel (frontend)
 
-### 🔐 Segurança
+---
 
-#### Backend (Laravel)
+## 🎯 OPÇÃO 1: RAILWAY + VERCEL (RECOMENDADA)
 
-**1. Variáveis de Ambiente (.env)**
+### **Por que essa combinação?**
+✅ Railway: Melhor plataforma para Laravel com PostgreSQL integrado  
+✅ Vercel: Perfeito para Next.js com deploy automático do Git  
+✅ Custo: $5/mês (Railway) + Grátis (Vercel)  
+✅ SSL/HTTPS automático em ambos  
+✅ Deploy via Git Push  
+
+---
+
+## 📋 PARTE 1: PREPARAR O BACKEND
+
+### 1.1 - Verificar arquivos criados
+Os seguintes arquivos foram criados automaticamente:
+- ✅ `.env.production` - Variáveis de ambiente para produção
+- ✅ `Procfile` - Comandos para iniciar o servidor
+- ✅ `railway.json` - Configuração do Railway
+- ✅ `nixpacks.toml` - Build configuration
+- ✅ `/api/health` endpoint - Health check
+
+### 1.2 - Atualizar .gitignore
 ```bash
-# ⚠️ CRÍTICO: Ajuste estas configurações para produção
+cd backend/musicrate-api
+```
 
+Verifique se o `.gitignore` NÃO ignora `.env.production`:
+```gitignore
+.env
+.env.backup
+.env.local
+# .env.production <- NÃO deve estar aqui
+```
+
+### 1.3 - Configurar CORS para produção
+Abra `config/cors.php` e verifique:
+
+```php
+'paths' => ['api/*', 'sanctum/csrf-cookie'],
+'allowed_origins' => explode(',', env('FRONTEND_URL', 'http://localhost:3000')),
+'allowed_origins_patterns' => [],
+'supports_credentials' => true,
+```
+
+### 1.4 - Commit das mudanças
+```bash
+git add .
+git commit -m "feat: adiciona configuração para deploy Railway + Vercel"
+git push origin feat/reviews
+```
+
+---
+
+## 🚂 PARTE 2: DEPLOY DO BACKEND NO RAILWAY
+
+### 2.1 - Criar conta no Railway
+1. Acesse: https://railway.app
+2. Clique em **"Start a New Project"**
+3. Faça login com GitHub
+
+### 2.2 - Criar novo projeto
+1. Clique em **"New Project"**
+2. Escolha **"Deploy from GitHub repo"**
+3. Selecione o repositório `musicRATE`
+4. **IMPORTANTE**: Configure **Root Directory** para `backend/musicrate-api`
+5. Railway vai detectar automaticamente que é Laravel
+
+### 2.3 - Adicionar PostgreSQL
+1. No dashboard do projeto, clique em **"+ New"**
+2. Selecione **"Database" → "PostgreSQL"**
+3. Railway criará automaticamente e conectará ao backend
+
+### 2.4 - Configurar variáveis de ambiente
+1. Clique no serviço **"musicrate-api"**
+2. Vá em **"Variables"**
+3. Adicione as seguintes variáveis:
+
+```bash
+# APP
+APP_NAME=MusicRate
 APP_ENV=production
 APP_DEBUG=false
-APP_URL=https://api.seudominio.com
 
-# Sessão - HTTPS obrigatório
-SESSION_SECURE_COOKIE=true      # ✅ Requer HTTPS
-SESSION_SAME_SITE=none          # ✅ Permite cross-origin com HTTPS
-SESSION_HTTP_ONLY=true          # ✅ Proteção contra XSS
-SESSION_DOMAIN=.seudominio.com  # ✅ Permite subdomínios
+# Gere a chave LOCALMENTE antes: php artisan key:generate --show
+APP_KEY=base64:SuaChaveAqui==
 
-# CORS
-FRONTEND_URL=https://seudominio.com
-SANCTUM_STATEFUL_DOMAINS=seudominio.com,www.seudominio.com
+# Railway fornece automaticamente:
+# DATABASE_URL, PGHOST, PGPORT, PGDATABASE, PGUSER, PGPASSWORD
+
+# SPOTIFY (pegue em https://developer.spotify.com/dashboard)
+SPOTIFY_CLIENT_ID=seu_client_id
+SPOTIFY_CLIENT_SECRET=seu_client_secret
+
+# FRONTEND (vamos pegar depois do deploy da Vercel)
+FRONTEND_URL=https://seu-app.vercel.app
+
+# SESSION
+SESSION_DRIVER=database
+SESSION_SECURE_COOKIE=true
+SESSION_SAME_SITE=none
+SESSION_HTTP_ONLY=true
 ```
 
-**2. Comandos Pré-Deploy**
-```bash
-# Gerar nova APP_KEY (faça backup da antiga se tiver dados encriptados)
-php artisan key:generate
+### 2.5 - Configurar domínio
+1. No serviço backend, vá em **"Settings"**
+2. Em **"Networking"**, clique em **"Generate Domain"**
+3. Copie a URL gerada (ex: `musicrate-production.railway.app`)
+4. Volte em **"Variables"** e adicione:
+   - `APP_URL=https://musicrate-production.railway.app`
+   - `SPOTIFY_REDIRECT_URI=https://musicrate-production.railway.app/api/auth/callback`
 
-# Limpar caches
-php artisan config:clear
-php artisan cache:clear
-php artisan route:clear
-php artisan view:clear
+### 2.6 - Deploy
+1. Railway fará deploy automaticamente
+2. Aguarde o build completar (~5 minutos)
+3. Verifique logs em **"Deployments" → "View Logs"**
+4. Teste: `https://seu-backend.railway.app/api/health`
 
-# Otimizar para produção
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
-
-# Rodar migrações
-php artisan migrate --force
-
-# Criar tabela de sessões se não existir
-php artisan session:table
-php artisan migrate
-```
-
-**3. Servidor Web**
-- ✅ Configure HTTPS/SSL (Let's Encrypt recomendado)
-- ✅ Aponte para `/public` (não para a raiz do projeto)
-- ✅ Configure redirect HTTP → HTTPS
-- ✅ Configure headers de segurança
-
-**4. Banco de Dados**
-- ✅ Use senha forte
-- ✅ Limite conexões apenas do servidor da aplicação
-- ✅ Configure backups automáticos
-- ✅ Use PostgreSQL 15+ ou MySQL 8+
-
----
-
-#### Frontend (Next.js)
-
-**1. Variáveis de Ambiente**
-
-Crie `.env.production`:
-```bash
-NEXT_PUBLIC_BACKEND_URL=https://api.seudominio.com
-NEXT_PUBLIC_BACKEND_API_BASE_URL=https://api.seudominio.com/api
-```
-
-**2. Build de Produção**
-```bash
-# Instalar dependências
-npm install
-
-# Build otimizado
-npm run build
-
-# Testar localmente antes do deploy
-npm run start
-```
-
-**3. next.config.ts**
-Já está configurado para aceitar imagens do Spotify CDN ✅
-
----
-
-### 🌐 Opções de Deploy
-
-#### **Opção 1: Vercel (Frontend) + Railway/Render (Backend)**
-
-**Frontend no Vercel:**
-```bash
-# Instalar Vercel CLI
-npm i -g vercel
-
-# Deploy
-cd frontend
-vercel --prod
-```
-
-**Backend no Railway:**
-1. Conecte seu repositório GitHub
-2. Configure variáveis de ambiente via dashboard
-3. Railway detecta Laravel automaticamente
-4. Adicione PostgreSQL como add-on
-
-**Backend no Render:**
-1. Conecte repositório GitHub
-2. Configure como "Web Service"
-3. Build Command: `composer install && php artisan migrate --force`
-4. Start Command: `php artisan serve --host=0.0.0.0 --port=$PORT`
-
----
-
-#### **Opção 2: VPS (DigitalOcean, AWS, Linode)**
-
-**Stack Recomendada:**
-- Ubuntu 22.04 LTS
-- Nginx
-- PHP 8.2+ com FPM
-- PostgreSQL 15
-- Redis (para cache e sessions)
-- Certbot (SSL)
-
-**Setup Rápido:**
-```bash
-# 1. Instalar dependências
-sudo apt update
-sudo apt install nginx php8.2-fpm php8.2-pgsql php8.2-redis postgresql redis-server
-
-# 2. Clonar repositório
-cd /var/www
-git clone seu-repo.git musicrate
-cd musicrate/backend/musicrate-api
-
-# 3. Instalar dependências PHP
-composer install --optimize-autoloader --no-dev
-
-# 4. Configurar permissões
-sudo chown -R www-data:www-data storage bootstrap/cache
-sudo chmod -R 775 storage bootstrap/cache
-
-# 5. Configurar .env (copiar do .env.production.example)
-cp .env.production.example .env
-nano .env  # Edite as variáveis
-
-# 6. Otimizar
-php artisan key:generate
-php artisan migrate --force
-php artisan config:cache
-php artisan route:cache
-
-# 7. Configurar Nginx
-sudo nano /etc/nginx/sites-available/musicrate
-# (copie configuração abaixo)
-
-# 8. SSL com Let's Encrypt
-sudo certbot --nginx -d api.seudominio.com
-```
-
-**Configuração Nginx:**
-```nginx
-server {
-    listen 80;
-    server_name api.seudominio.com;
-    root /var/www/musicrate/backend/musicrate-api/public;
-
-    add_header X-Frame-Options "SAMEORIGIN";
-    add_header X-Content-Type-Options "nosniff";
-
-    index index.php;
-
-    charset utf-8;
-
-    location / {
-        try_files $uri $uri/ /index.php?$query_string;
-    }
-
-    location ~ \.php$ {
-        fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
-        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
-        include fastcgi_params;
-    }
-
-    location ~ /\.(?!well-known).* {
-        deny all;
-    }
+**Resposta esperada:**
+```json
+{
+  "status": "ok",
+  "database": "connected",
+  "timestamp": "2025-12-04T..."
 }
 ```
 
 ---
 
-#### **Opção 3: Docker (Recomendado para Consistência)**
+## 🌐 PARTE 3: DEPLOY DO FRONTEND NA VERCEL
 
-**docker-compose.production.yml:**
-```yaml
-version: '3.8'
-
-services:
-  app:
-    build:
-      context: ./backend/musicrate-api
-      dockerfile: Dockerfile.production
-    environment:
-      - APP_ENV=production
-    volumes:
-      - ./backend/musicrate-api:/app
-    networks:
-      - musicrate-network
-    depends_on:
-      - db
-      - redis
-
-  db:
-    image: postgres:15
-    environment:
-      POSTGRES_DB: musicrate_production
-      POSTGRES_USER: musicrate
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - musicrate-network
-
-  redis:
-    image: redis:alpine
-    networks:
-      - musicrate-network
-
-  nginx:
-    image: nginx:alpine
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-      - ./ssl:/etc/nginx/ssl
-    depends_on:
-      - app
-    networks:
-      - musicrate-network
-
-networks:
-  musicrate-network:
-    driver: bridge
-
-volumes:
-  postgres_data:
+### 3.1 - Atualizar configuração do Frontend
+Edite `frontend/.env.production`:
+```bash
+NEXT_PUBLIC_API_URL=https://musicrate-production.railway.app
+NEXT_PUBLIC_APP_URL=https://seu-app.vercel.app
 ```
 
----
+Commit:
+```bash
+cd frontend
+git add .env.production
+git commit -m "feat: adiciona variáveis de produção"
+git push origin feat/reviews
+```
 
-### 🔍 Diferenças: Desenvolvimento vs Produção
+### 3.2 - Criar conta na Vercel
+1. Acesse: https://vercel.com
+2. Faça login com GitHub
+3. Clique em **"Add New..." → "Project"**
 
-| Configuração | Desenvolvimento | Produção |
-|--------------|----------------|----------|
-| `APP_ENV` | local | production |
-| `APP_DEBUG` | true | **false** |
-| `APP_URL` | http://localhost | https://api.seudominio.com |
-| `SESSION_SECURE_COOKIE` | false | **true** |
-| `SESSION_SAME_SITE` | lax | **none** |
-| `SESSION_HTTP_ONLY` | false (debug) | **true** |
-| `SESSION_DOMAIN` | vazio | .seudominio.com |
-| HTTPS | Não obrigatório | **OBRIGATÓRIO** |
-| Cache | Desabilitado | **config:cache, route:cache** |
+### 3.3 - Importar projeto
+1. Selecione o repositório `musicRATE`
+2. Clique em **"Import"**
+3. Configure:
+   - **Framework Preset**: Next.js
+   - **Root Directory**: `frontend`
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `.next`
 
----
-
-### ✅ Testes Pós-Deploy
+### 3.4 - Adicionar variáveis de ambiente
+Na seção **"Environment Variables"**:
 
 ```bash
-# 1. Verificar health
-curl https://api.seudominio.com/up
-
-# 2. Testar CORS
-curl -H "Origin: https://seudominio.com" \
-     -H "Access-Control-Request-Method: POST" \
-     -X OPTIONS \
-     https://api.seudominio.com/api/auth/me
-
-# 3. Testar sessão
-curl -c cookies.txt https://api.seudominio.com/api/auth/me
-curl -b cookies.txt https://api.seudominio.com/api/auth/me
-# Session ID deve ser o mesmo
-
-# 4. Verificar logs
-tail -f storage/logs/laravel.log
+NEXT_PUBLIC_API_URL=https://musicrate-production.railway.app
+NEXT_PUBLIC_APP_URL=https://seu-app.vercel.app
 ```
 
+### 3.5 - Deploy
+1. Clique em **"Deploy"**
+2. Aguarde build (~3 minutos)
+3. Vercel fornecerá uma URL: `https://music-rate-xyz.vercel.app`
+
+### 3.6 - Atualizar URL no Backend
+Volte no Railway:
+1. Vá em **Variables** do backend
+2. Atualize `FRONTEND_URL=https://music-rate-xyz.vercel.app`
+3. Railway fará redeploy automaticamente
+
 ---
 
-### 📊 Monitoramento
+## 🎵 PARTE 4: CONFIGURAR SPOTIFY DEVELOPER
 
-**Recomendações:**
-- **Sentry** para tracking de erros
-- **New Relic** ou **DataDog** para performance
-- **Uptime Robot** para monitorar disponibilidade
-- **LogRocket** ou **FullStory** para sessões de usuário (frontend)
+### 4.1 - Atualizar Redirect URIs
+1. Acesse: https://developer.spotify.com/dashboard
+2. Selecione seu app
+3. Clique em **"Edit Settings"**
+4. Em **"Redirect URIs"**, adicione:
+   ```
+   https://musicrate-production.railway.app/api/auth/callback
+   https://seu-app.vercel.app/auth/callback
+   ```
+5. Salve
 
 ---
 
-### 🆘 Troubleshooting Comum
+## ✅ PARTE 5: TESTAR O SISTEMA
 
-**Problema: Sessão não persiste em produção**
+### 5.1 - Testes básicos
 ```bash
-# Verificar:
-1. HTTPS está ativo? (obrigatório para SESSION_SECURE_COOKIE=true)
-2. SESSION_DOMAIN está correto? (use .seudominio.com para incluir subdomínios)
-3. SANCTUM_STATEFUL_DOMAINS inclui seu domínio?
-4. Frontend está enviando credentials: 'include'?
+# 1. Health check do backend
+curl https://musicrate-production.railway.app/api/health
+
+# 2. Teste Spotify search
+curl https://musicrate-production.railway.app/api/spotify/search?q=Radiohead&type=artist
+
+# 3. Acesse o frontend
+# Abra: https://seu-app.vercel.app
 ```
 
-**Problema: CORS bloqueando requisições**
+### 5.2 - Fluxo completo
+1. ✅ Acesse o frontend
+2. ✅ Clique em "Login com Spotify"
+3. ✅ Autorize o app no Spotify
+4. ✅ Deve retornar logado
+5. ✅ Busque um artista/álbum
+6. ✅ Crie uma review
+7. ✅ Siga um usuário/artista
+8. ✅ Veja notificações
+
+---
+
+## 🔧 COMANDOS ÚTEIS - RAILWAY CLI
+
+### Instalar Railway CLI (opcional)
 ```bash
-# Verificar:
-1. config/cors.php tem seu domínio em allowed_origins?
-2. supports_credentials está true?
-3. Frontend está no mesmo domínio ou subdomínio?
+# Windows (PowerShell)
+iwr https://railway.app/install.ps1 -useb | iex
+
+# Login
+railway login
+
+# Ver logs em tempo real
+railway logs
+
+# Rodar migrations manualmente
+railway run php artisan migrate --force
+
+# Acessar banco de dados
+railway connect postgresql
 ```
 
 ---
 
-### 📝 Checklist Final
+## 💰 CUSTOS ESTIMADOS
 
-- [ ] `.env` configurado com valores de produção
-- [ ] APP_KEY gerado (`php artisan key:generate`)
-- [ ] Migrations rodadas (`php artisan migrate --force`)
-- [ ] Caches criados (`config:cache`, `route:cache`)
-- [ ] HTTPS configurado e funcionando
-- [ ] Domínios DNS configurados (A record, CNAME)
-- [ ] Variáveis de ambiente do frontend apontando para API de produção
-- [ ] Spotify App configurado com redirect_uri de produção
-- [ ] Backup do banco configurado
-- [ ] Monitoramento ativo
-- [ ] Logs sendo salvos e rotacionados
+### Railway (Backend + PostgreSQL)
+- **Hobby Plan**: $5/mês
+- Inclui: 500GB de bandwidth, $5 de usage
+- PostgreSQL compartilhado incluído
+- **Crédito grátis**: $5 no primeiro mês
+
+### Vercel (Frontend)
+- **Hobby Plan**: GRÁTIS
+- Inclui: 100GB de bandwidth
+- Domínio .vercel.app gratuito
+- Build automático do Git
+
+### Total: $5/mês (ou grátis no primeiro mês)
 
 ---
 
-### 🎯 Comandos Úteis
+## 🎯 OPÇÃO 2: RENDER + VERCEL (ALTERNATIVA GRATUITA)
 
+Se preferir começar 100% gratuito:
+
+### Backend no Render (FREE)
+1. Acesse: https://render.com
+2. Crie **"New Web Service"**
+3. Conecte o GitHub
+4. Configure:
+   - **Root Directory**: `backend/musicrate-api`
+   - **Build Command**: `composer install --no-dev && php artisan key:generate --force`
+   - **Start Command**: `php artisan serve --host=0.0.0.0 --port=$PORT`
+5. Adicione **PostgreSQL** (Free tier)
+6. Configure variáveis de ambiente (mesmas do Railway)
+
+**⚠️ Limitações do Free tier:**
+- App hiberna após 15min de inatividade
+- Cold start de 50 segundos na primeira requisição
+- Adequado para projetos pessoais/portfólio
+
+---
+
+## 🛠️ TROUBLESHOOTING COMUM
+
+### Erro: "No application encryption key"
 ```bash
-# Rollback de migração
-php artisan migrate:rollback
+# Gere localmente
+php artisan key:generate --show
 
-# Ver status das migrações
-php artisan migrate:status
-
-# Limpar sessões expiradas
-php artisan schedule:run
-
-# Limpar todos os caches
-php artisan optimize:clear
-
-# Ver rotas
-php artisan route:list
-
-# Ver configuração atual
-php artisan config:show session
+# Copie o resultado e adicione em APP_KEY no Railway
 ```
+
+### Erro: "CORS blocked"
+Verifique `config/cors.php` e variável `FRONTEND_URL`
+
+### Erro: "Database connection failed"
+Verifique se as variáveis `PGHOST`, `PGPORT`, etc. estão definidas no Railway
+
+### Erro: "419 Session expired"
+Verifique:
+- `SESSION_SECURE_COOKIE=true`
+- `SESSION_SAME_SITE=none`
+- Frontend usando HTTPS
+
+### Frontend não conecta com backend
+Verifique `NEXT_PUBLIC_API_URL` no Vercel
+
+### Build falha no Railway
+Verifique:
+- Root Directory está correto: `backend/musicrate-api`
+- `composer.json` existe no diretório
+- Logs de build para ver erro específico
 
 ---
 
-## 🚨 IMPORTANTE
+## 📚 DOCUMENTAÇÃO ADICIONAL
 
-**Nunca faça commit de:**
-- `.env` (use `.env.example`)
-- `vendor/` (use `composer install`)
-- `node_modules/` (use `npm install`)
-- Chaves privadas
-- Senhas
+- Railway: https://docs.railway.app
+- Vercel: https://vercel.com/docs
+- Laravel Deploy: https://laravel.com/docs/deployment
+- Next.js Deploy: https://nextjs.org/docs/deployment
 
-**Sempre:**
-- Use variáveis de ambiente
-- Mantenha dependências atualizadas
-- Faça backup regular
-- Monitore logs de erro
-- Teste em staging antes de produção
+---
+
+## 🎉 PRÓXIMOS PASSOS
+
+Após deploy bem-sucedido:
+
+1. **Domínio customizado**
+   - Railway: Adicione domínio em Settings → Networking
+   - Vercel: Adicione domínio em Settings → Domains
+
+2. **Monitoramento**
+   - Railway: Veja métricas em tempo real
+   - Vercel: Analytics automático
+
+3. **CI/CD**
+   - Deploy automático a cada push na branch
+   - Configure branch de produção
+
+4. **Backup do banco**
+   - Railway: Snapshots automáticos
+   - Configure backups periódicos
+
+5. **Segurança**
+   - Adicione rate limiting
+   - Monitore logs de acesso
+   - Configure alertas
+
+---
+
+## 📝 CHECKLIST FINAL
+
+Antes de fazer deploy, verifique:
+
+**Backend:**
+- [ ] `.env.production` criado
+- [ ] `APP_KEY` gerado
+- [ ] Credenciais Spotify configuradas
+- [ ] `/api/health` endpoint funciona
+- [ ] CORS configurado corretamente
+- [ ] Migrations testadas localmente
+
+**Frontend:**
+- [ ] `.env.production` criado
+- [ ] URLs de produção configuradas
+- [ ] Build local funciona (`npm run build`)
+- [ ] Variáveis NEXT_PUBLIC_ estão corretas
+
+**Spotify:**
+- [ ] Redirect URIs de produção adicionados
+- [ ] App está em modo Development (ou Production se aprovado)
+
+**Git:**
+- [ ] Código commitado e pushed
+- [ ] Branch de produção definida
+- [ ] .gitignore correto (não ignora .env.production)
+
+---
+
+**✅ Seu projeto está pronto para produção!**
+
+Qualquer dúvida durante o processo, consulte a seção de troubleshooting ou a documentação oficial das plataformas. 🚀

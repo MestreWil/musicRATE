@@ -3,9 +3,14 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Track } from '@/lib/types';
+import { useAudio } from '@/contexts/AudioContext';
 
 // Componente para exibir track em formato de lista (usado em resultados de busca)
 export default function TrackCard({ track, index }: { track: Track; index?: number }) {
+  const { play, currentTrack, isPlaying, pause } = useAudio();
+  
+  const isCurrentTrack = currentTrack?.id === track.id;
+  const isCurrentlyPlaying = isCurrentTrack && isPlaying;
   // Formatar duração (ms para mm:ss)
   const formatDuration = (ms: number) => {
     const totalSeconds = Math.floor(ms / 1000);
@@ -21,17 +26,44 @@ export default function TrackCard({ track, index }: { track: Track; index?: numb
     <div className="group flex items-center gap-4 p-3 rounded-lg hover:bg-neutral-800/50 transition-colors">
       {/* Número/Play Button */}
       <div className="w-8 text-center text-neutral-400 text-sm shrink-0">
-        {typeof index === 'number' ? (
+        {typeof index === 'number' && !isCurrentlyPlaying ? (
           <span className="group-hover:hidden">{index + 1}</span>
         ) : null}
-        <button 
-          className={`${typeof index === 'number' ? 'hidden' : ''} group-hover:block text-white`}
-          aria-label="Play"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M8 5v14l11-7z"/>
-          </svg>
-        </button>
+        {isCurrentlyPlaying ? (
+          <div className="flex items-center justify-center">
+            <div className="w-4 h-4 flex items-center justify-center gap-0.5">
+              <span className="w-0.5 h-3 bg-red-500 animate-pulse"></span>
+              <span className="w-0.5 h-4 bg-red-500 animate-pulse" style={{ animationDelay: '0.2s' }}></span>
+              <span className="w-0.5 h-2 bg-red-500 animate-pulse" style={{ animationDelay: '0.4s' }}></span>
+            </div>
+          </div>
+        ) : (
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              if (track.previewUrl) {
+                play({
+                  id: track.id,
+                  name: track.name,
+                  artist: track.artists.map(a => a.name).join(', '),
+                  previewUrl: track.previewUrl,
+                  image: coverImage || undefined,
+                });
+              } else {
+                alert('Prévia de áudio não disponível para esta faixa.\n\nO Spotify pode restringir previews em algumas regiões ou para certas músicas.');
+              }
+            }}
+            disabled={false}
+            className={`${typeof index === 'number' ? 'hidden' : ''} group-hover:block text-white hover:scale-110 transition-transform cursor-pointer`}
+            aria-label="Play"
+            title={track.previewUrl ? 'Tocar prévia' : 'Prévia não disponível (clique para mais informações)'}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+          </button>
+        )}
       </div>
 
       {/* Capa */}

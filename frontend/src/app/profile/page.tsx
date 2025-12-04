@@ -7,6 +7,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { UserReviewCard } from '@/components/UserReviewCard';
 import { getMyReviews, Review } from '@/lib/reviews';
+import { apiGet } from '@/lib/api';
 
 export default function UserProfilePage() {
   const { authenticated, user, loading } = useAuth();
@@ -14,6 +15,47 @@ export default function UserProfilePage() {
   const [activeTab, setActiveTab] = useState<'all' | 'tracks' | 'albums' | 'singles'>('all');
   const [reviews, setReviews] = useState<Review[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [followersCount, setFollowersCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
+
+  // Function to fetch followers/following counts
+  const fetchCounts = async () => {
+    if (!user?.id) {
+      console.log('[Profile] No user.id available for fetchCounts');
+      return;
+    }
+    
+    // Don't fetch if user.id is invalid (fallback value)
+    if (user.id === 'unknown' || user.id === 'me') {
+      console.log('[Profile] Invalid user.id, skipping fetchCounts:', user.id);
+      return;
+    }
+    
+    console.log('[Profile] Fetching counts for user.id:', user.id);
+    
+    try {
+      const followersData = await apiGet<{ count: number }>(`/users/${user.id}/followers`, { auth: false });
+      setFollowersCount(followersData.count);
+      console.log('[Profile] Followers count:', followersData.count);
+    } catch (e) {
+      console.error('[Profile] Error fetching followers:', e);
+    }
+
+    try {
+      // Use the new endpoint that includes users + artists
+      const followingData = await apiGet<{ 
+        users_count: number;
+        artists_count: number;
+        total_count: number;
+      }>(`/users/${user.id}/following-total`, { auth: false });
+      setFollowingCount(followingData.total_count);
+      console.log('[Profile] Following total:', followingData.total_count, 
+                  '(users:', followingData.users_count, 
+                  'artists:', followingData.artists_count, ')');
+    } catch (e) {
+      console.error('[Profile] Error fetching following:', e);
+    }
+  };
 
   useEffect(() => {
     // Só redireciona se terminou de carregar E não está autenticado
@@ -21,7 +63,7 @@ export default function UserProfilePage() {
       console.log('Redirecting to login - not authenticated');
       router.push('/login?return_to=/profile');
     } else if (authenticated && user) {
-      console.log('User authenticated:', user);
+      console.log('[Profile] User authenticated:', { id: user.id, name: user.name, email: user.email });
     }
   }, [loading, authenticated, router, user]);
 
@@ -43,7 +85,39 @@ export default function UserProfilePage() {
 
     if (authenticated && user) {
       fetchReviews();
+      fetchCounts(); // Fetch counts when user is authenticated
     }
+  }, [authenticated, user]);
+
+  // Update counts periodically and on visibility change
+  useEffect(() => {
+    if (!authenticated || !user?.id) return;
+
+    // Set up interval to refresh counts every 30 seconds
+    const interval = setInterval(() => {
+      fetchCounts();
+    }, 30000);
+
+    // Refresh when tab becomes visible
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchCounts();
+      }
+    };
+
+    // Listen for follow/unfollow events
+    const handleFollowChange = () => {
+      fetchCounts();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('follow:changed', handleFollowChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('follow:changed', handleFollowChange);
+    };
   }, [authenticated, user]);
 
   if (loading) {
@@ -118,11 +192,11 @@ export default function UserProfilePage() {
                       <span className="text-neutral-400 ml-1">reviews</span>
                     </div>
                     <div>
-                      <span className="font-semibold text-neutral-100">0</span>
+                      <span className="font-semibold text-neutral-100">{followersCount}</span>
                       <span className="text-neutral-400 ml-1">followers</span>
                     </div>
                     <div>
-                      <span className="font-semibold text-neutral-100">0</span>
+                      <span className="font-semibold text-neutral-100">{followingCount}</span>
                       <span className="text-neutral-400 ml-1">following</span>
                     </div>
                   </div>

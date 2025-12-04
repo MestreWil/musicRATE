@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/useAuth';
+import { NotificationsDropdown } from './NotificationsDropdown';
 
 const links = [
   { href: '/', label: 'Início' },
@@ -151,8 +152,13 @@ export function Navbar() {
                 <span className="hidden md:inline text-sm text-neutral-500">...</span>
               </div>
             ) : authenticated && user ? (
-              // Usuário logado - mostrar avatar e dropdown
-              <div className="relative">
+              // Usuário logado - mostrar avatar, notificações e dropdown
+              <div className="flex items-center gap-2">
+                {/* Notifications */}
+                <NotificationsDropdown />
+                
+                {/* User Menu */}
+                <div className="relative">
                 <button 
                   onClick={() => setOpenUserMenu(!openUserMenu)}
                   onBlur={(e) => {
@@ -205,6 +211,7 @@ export function Navbar() {
                     </button>
                   </div>
                 )}
+                </div>
               </div>
             ) : (
               // Não logado - botão "Acessar"

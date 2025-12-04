@@ -4,6 +4,9 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import { UserReviewCard } from '@/components/UserReviewCard';
+import { FollowButton } from '@/components/FollowButton';
+import { apiGet } from '@/lib/api';
+import { getSessionClient } from '@/lib/auth';
 
 interface Review {
   id: string;
@@ -36,6 +39,32 @@ export default function UserProfilePage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'all' | 'tracks' | 'albums' | 'singles'>('all');
   const [error, setError] = useState<string | null>(null);
+  const [followersCount, setFollowersCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isOwnProfile, setIsOwnProfile] = useState(false);
+
+  // Function to fetch followers/following counts
+  const fetchCounts = async () => {
+    try {
+      const followersData = await apiGet<{ count: number }>(`/users/${userId}/followers`, { auth: false });
+      setFollowersCount(followersData.count);
+    } catch (e) {
+      console.error('Error fetching followers:', e);
+    }
+
+    try {
+      // Use the new endpoint that includes users + artists
+      const followingData = await apiGet<{ 
+        users_count: number;
+        artists_count: number;
+        total_count: number;
+      }>(`/users/${userId}/following-total`, { auth: false });
+      setFollowingCount(followingData.total_count);
+    } catch (e) {
+      console.error('Error fetching following:', e);
+    }
+  };
 
   useEffect(() => {
     async function fetchUserProfile() {
@@ -59,6 +88,12 @@ export default function UserProfilePage() {
         console.log('User data from API:', userData);
         setUser(userData);
 
+        // Check if viewing own profile
+        const session = getSessionClient();
+        if (session?.user?.id) {
+          setIsOwnProfile(session.user.id === userId);
+        }
+
         // Buscar reviews do usuário
         const reviewsResponse = await fetch(`${baseUrl}/reviews/user/${userId}`, {
           cache: 'no-store'
@@ -68,6 +103,19 @@ export default function UserProfilePage() {
         }
         const reviewsData = await reviewsResponse.json();
         setReviews(reviewsData.data || []);
+
+        // Fetch followers/following counts
+        await fetchCounts();
+
+        // Check if current user follows this user
+        if (session?.user?.id && session.user.id !== userId) {
+          try {
+            const checkData = await apiGet<{ is_following: boolean }>(`/users/${userId}/check-following`);
+            setIsFollowing(checkData.is_following);
+          } catch (e) {
+            console.error('Error checking following status:', e);
+          }
+        }
       } catch (err) {
         console.error('Erro ao carregar perfil:', err);
         setError(err instanceof Error ? err.message : 'Erro ao carregar perfil');
@@ -79,6 +127,40 @@ export default function UserProfilePage() {
     if (userId) {
       fetchUserProfile();
     }
+  }, [userId]);
+
+  // Update counts periodically and on visibility change
+  useEffect(() => {
+    if (!userId) return;
+
+    // Fetch counts immediately
+    fetchCounts();
+
+    // Set up interval to refresh counts every 30 seconds
+    const interval = setInterval(() => {
+      fetchCounts();
+    }, 30000);
+
+    // Refresh when tab becomes visible
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchCounts();
+      }
+    };
+
+    // Listen for follow/unfollow events
+    const handleFollowChange = () => {
+      fetchCounts();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('follow:changed', handleFollowChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('follow:changed', handleFollowChange);
+    };
   }, [userId]);
 
   const filteredReviews = activeTab === 'all' 
@@ -165,22 +247,22 @@ export default function UserProfilePage() {
                       <span className="text-neutral-400 ml-1">reviews</span>
                     </div>
                     <div>
-                      <span className="font-semibold text-neutral-100">0</span>
+                      <span className="font-semibold text-neutral-100">{followersCount}</span>
                       <span className="text-neutral-400 ml-1">followers</span>
                     </div>
                     <div>
-                      <span className="font-semibold text-neutral-100">0</span>
+                      <span className="font-semibold text-neutral-100">{followingCount}</span>
                       <span className="text-neutral-400 ml-1">following</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Follow Button */}
-                <div className="flex items-center gap-3 mt-6 md:mt-4">
-                  <button className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold transition-all hover:scale-105 shadow-lg">
-                    Follow
-                  </button>
-                </div>
+                {!isOwnProfile && (
+                  <div className="flex items-center gap-3 mt-6 md:mt-4">
+                    <FollowButton userId={userId} initialFollowing={isFollowing} />
+                  </div>
+                )}
               </div>
             </div>
           </div>

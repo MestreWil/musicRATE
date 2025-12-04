@@ -74,3 +74,20 @@ export async function apiDelete<T>(path: string, options: RequestOptions = {}): 
   });
   return handleResponse<T>(res);
 }
+
+export async function apiPut<T, B = any>(path: string, body?: B, options: RequestOptions = {}): Promise<T> {
+  const url = `${BASE_URL}${path}`;
+  const authHeaders = options.auth !== false ? getAuthHeaders() : {};
+  const res = await fetch(url, {
+    ...options,
+    method: 'PUT',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      ...authHeaders,
+      ...(options.headers || {})
+    },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  return handleResponse<T>(res);
+}
