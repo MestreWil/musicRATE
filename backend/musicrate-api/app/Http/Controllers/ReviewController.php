@@ -82,6 +82,11 @@ class ReviewController extends Controller
      */
     public function byUser(Request $request): JsonResponse
     {
+        \Log::info('byUser method called', [
+            'user' => $request->user() ? $request->user()->id : 'null',
+            'authenticated' => $request->user() !== null
+        ]);
+        
         $userId = $request->user()->id;
         
         $reviews = Review::where('user_id', $userId)

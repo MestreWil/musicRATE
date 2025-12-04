@@ -30,6 +30,19 @@ Route::prefix('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum')->name('auth.logout');
 });
 
+// ROTA TEMPORÁRIA DE DEBUG
+Route::get('/debug/reviews-test', function(\Illuminate\Http\Request $request) {
+    $token = $request->bearerToken();
+    $user = $request->user();
+    
+    return response()->json([
+        'has_bearer_token' => $token !== null,
+        'token_preview' => $token ? substr($token, 0, 20) . '...' : null,
+        'authenticated' => $user !== null,
+        'user_id' => $user?->id,
+    ]);
+})->middleware('auth:sanctum');
+
 // ROTA TEMPORÁRIA - DESENVOLVIMENTO: Criar usuário
 Route::post('/dev/users', function(\Illuminate\Http\Request $request) {
     \Log::info('Request received', ['all' => $request->all(), 'json' => $request->json()->all()]);
@@ -47,13 +60,34 @@ Route::post('/dev/users', function(\Illuminate\Http\Request $request) {
     ], 201);
 });
 
+// =====================================================
+// ROTAS AUTENTICADAS (Spotify OAuth) - DEVEM VIR PRIMEIRO
+// =====================================================
+
+Route::middleware(['auth:sanctum'])->group(function () {
+    
+    // Gerenciamento de token
+    Route::prefix('auth')->group(function () {
+        Route::get('/token', [AuthController::class, 'getToken'])->name('auth.token');
+    });
+
+    // Reviews protegidas (criar, editar, deletar)
+    Route::prefix('reviews')->group(function () {
+        Route::get('/me', [ReviewController::class, 'byUser'])->name('reviews.me');
+        Route::post('/', [ReviewController::class, 'store'])->name('reviews.store');
+        Route::put('/{review}', [ReviewController::class, 'update'])->name('reviews.update');
+        Route::delete('/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
+    });
+});
+
 // Reviews (leitura pública)
 Route::prefix('reviews')->group(function () {
     Route::get('/', [ReviewController::class, 'index'])->name('reviews.index');
+    Route::get('/stats', [ReviewController::class, 'stats'])->name('reviews.stats');
+    Route::get('/album/{spotifyAlbumId}', [ReviewController::class, 'byAlbum'])->name('reviews.album');
     Route::get('/{targetType}/{targetSpotifyId}', [ReviewController::class, 'byTarget'])->name('reviews.by_target')
         ->where('targetType', 'album|track|single');
-    Route::get('/album/{spotifyAlbumId}', [ReviewController::class, 'byAlbum'])->name('reviews.album');
-    Route::get('/stats', [ReviewController::class, 'stats'])->name('reviews.stats');
+    // Esta deve ser a última porque é genérica
     Route::get('/{review}', [ReviewController::class, 'show'])->name('reviews.show');
 });
 
@@ -81,26 +115,6 @@ Route::prefix('spotify')->group(function () {
     Route::get('/browse/new-releases', [SpotifyController::class, 'getNewReleases'])->name('spotify.new.releases');
     Route::get('/browse/categories', [SpotifyController::class, 'getCategories'])->name('spotify.categories');
     Route::get('/browse/categories/{id}/playlists', [SpotifyController::class, 'getCategoryPlaylists'])->name('spotify.category.playlists');
-});
-
-// =====================================================
-// ROTAS AUTENTICADAS (Spotify OAuth)
-// =====================================================
-
-Route::middleware(['auth:sanctum'])->group(function () {
-    
-    // Gerenciamento de token
-    Route::prefix('auth')->group(function () {
-        Route::get('/token', [AuthController::class, 'getToken'])->name('auth.token');
-    });
-
-    // Reviews protegidas (criar, editar, deletar)
-    Route::prefix('reviews')->group(function () {
-        Route::get('/me', [ReviewController::class, 'byUser'])->name('reviews.me');
-        Route::post('/', [ReviewController::class, 'store'])->name('reviews.store');
-        Route::put('/{review}', [ReviewController::class, 'update'])->name('reviews.update');
-        Route::delete('/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
-    });
 });
 
 Route::prefix('public')->group(function () {
