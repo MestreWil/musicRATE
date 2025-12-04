@@ -97,10 +97,27 @@ Route::prefix('users')->group(function () {
     Route::get('/{userId}', function($userId) {
         $user = \App\Models\User::findOrFail($userId);
         
+        // Gerar username legível
+        $username = $user->spotify_id;
+        
+        // Detectar se é um ID do Facebook/Spotify gerado (longo, alfanumérico, sem underscore/hífen)
+        // IDs normais do Spotify têm underscores ou são mais curtos
+        $isFacebookId = strlen($user->spotify_id) > 20 && !str_contains($user->spotify_id, '_') && !str_contains($user->spotify_id, '-');
+        
+        // Se for ID do Facebook ou apenas números, usar display_name como base
+        if ($isFacebookId || is_numeric($user->spotify_id)) {
+            if ($user->display_name) {
+                // Converter display_name para username (lowercase, sem espaços)
+                $username = strtolower(str_replace(' ', '', $user->display_name));
+            } else {
+                $username = 'user' . substr($user->id, 0, 8);
+            }
+        }
+        
         return response()->json([
             'id' => $user->id,
             'name' => $user->display_name ?? $user->email ?? 'User',
-            'username' => $user->spotify_id ?? $user->display_name ?? $user->email ?? 'user',
+            'username' => $username,
             'avatar' => $user->avatar_url,
             'created_at' => $user->created_at,
             'reviews_count' => $user->reviews()->count(),

@@ -96,20 +96,58 @@ class AuthController extends Controller
 
             if ($userResponse->failed()) {
                 Log::error('Failed to fetch Spotify user data', [
-                    'status' => $userResponse->status()
+                    'status' => $userResponse->status(),
+                    'body' => $userResponse->body()
                 ]);
+                
+                return response()->json([
+                    'error' => 'Falha ao buscar dados do usuário no Spotify'
+                ], 500);
             }
 
             $spotifyUser = $userResponse->json();
 
+            // Validar dados essenciais
+            if (!isset($spotifyUser['id'])) {
+                Log::error('Spotify user data missing ID', [
+                    'data' => $spotifyUser
+                ]);
+                
+                return response()->json([
+                    'error' => 'Dados do usuário Spotify incompletos'
+                ], 500);
+            }
+
+            // Log dados recebidos para debug
+            Log::info('Spotify user data received', [
+                'spotify_id' => $spotifyUser['id'] ?? 'N/A',
+                'has_display_name' => isset($spotifyUser['display_name']),
+                'has_email' => isset($spotifyUser['email']),
+                'has_images' => isset($spotifyUser['images']),
+                'images_count' => isset($spotifyUser['images']) ? count($spotifyUser['images']) : 0
+            ]);
+
+            // Extrair avatar URL de forma segura
+            $avatarUrl = null;
+            if (isset($spotifyUser['images']) && is_array($spotifyUser['images']) && count($spotifyUser['images']) > 0) {
+                $avatarUrl = $spotifyUser['images'][0]['url'] ?? null;
+            }
+
+            // Preparar dados do usuário
+            $userData = [
+                'display_name' => $spotifyUser['display_name'] ?? $spotifyUser['id'] ?? 'User',
+                'avatar_url' => $avatarUrl,
+            ];
+
+            // Adicionar email apenas se existir (evitar problemas com unique constraint)
+            if (isset($spotifyUser['email']) && !empty($spotifyUser['email'])) {
+                $userData['email'] = $spotifyUser['email'];
+            }
+
             // Criar/atualizar usuário no banco de dados
             $user = \App\Models\User::updateOrCreate(
                 ['spotify_id' => $spotifyUser['id']],
-                [
-                    'display_name' => $spotifyUser['display_name'] ?? $spotifyUser['id'],
-                    'email' => $spotifyUser['email'] ?? null,
-                    'avatar_url' => $spotifyUser['images'][0]['url'] ?? null,
-                ]
+                $userData
             );
 
             // Criar token Sanctum para o usuário
@@ -156,11 +194,20 @@ class AuthController extends Controller
         } catch (\Exception $e) {
             Log::error('Spotify callback exception', [
                 'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+                'spotify_user_data' => $spotifyUser ?? null
             ]);
 
+            // Em desenvolvimento, mostrar mais detalhes
+            $errorMessage = 'Erro interno ao processar autenticação';
+            if (config('app.debug')) {
+                $errorMessage .= ': ' . $e->getMessage();
+            }
+
             return response()->json([
-                'error' => 'Erro interno ao processar autenticação'
+                'error' => $errorMessage
             ], 500);
         }
     }

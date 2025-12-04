@@ -46,15 +46,23 @@ export default function UserProfilePage() {
         const baseUrl = process.env.NEXT_PUBLIC_BACKEND_API_BASE_URL || 'http://127.0.0.1:8000/api';
         
         // Buscar dados do usuário
-        const userResponse = await fetch(`${baseUrl}/users/${userId}`);
+        const userResponse = await fetch(`${baseUrl}/users/${userId}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache',
+          }
+        });
         if (!userResponse.ok) {
           throw new Error('Usuário não encontrado');
         }
         const userData = await userResponse.json();
+        console.log('User data from API:', userData);
         setUser(userData);
 
         // Buscar reviews do usuário
-        const reviewsResponse = await fetch(`${baseUrl}/reviews/user/${userId}`);
+        const reviewsResponse = await fetch(`${baseUrl}/reviews/user/${userId}`, {
+          cache: 'no-store'
+        });
         if (!reviewsResponse.ok) {
           throw new Error('Erro ao carregar reviews');
         }
