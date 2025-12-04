@@ -60,8 +60,9 @@ class ReviewController extends Controller
      */
     public function byAlbum(string $spotifyAlbumId): JsonResponse
     {
-        $reviews = Review::with('user:id,display_name,email')
-            ->byAlbum($spotifyAlbumId)
+        $reviews = Review::with('user:id,display_name,email,avatar_url')
+            ->byTarget('album', $spotifyAlbumId)
+            ->where('active', 'Y')
             ->latest()
             ->get();
 
