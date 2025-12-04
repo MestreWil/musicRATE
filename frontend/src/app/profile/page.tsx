@@ -6,20 +6,7 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { UserReviewCard } from '@/components/UserReviewCard';
-
-type ReviewType = 'track' | 'album' | 'single';
-
-interface Review {
-  id: string;
-  target_type: ReviewType;
-  target_spotify_id: string;
-  album_name: string;
-  artist_name: string;
-  album_image_url: string | null;
-  rating: number;
-  review_text: string | null;
-  created_at: string;
-}
+import { getMyReviews, Review } from '@/lib/reviews';
 
 export default function UserProfilePage() {
   const { authenticated, user, loading } = useAuth();
@@ -43,24 +30,11 @@ export default function UserProfilePage() {
     const fetchReviews = async () => {
       setReviewsLoading(true);
       try {
-        const baseUrl = process.env.NEXT_PUBLIC_BACKEND_API_BASE_URL || 'http://127.0.0.1:8000/api';
-        const response = await fetch(`${baseUrl}/reviews/me`, {
-          credentials: 'include',
-          headers: {
-            'Accept': 'application/json',
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          // A API retorna paginação, pegar os dados
-          setReviews(data.data || []);
-        } else {
-          console.error('Failed to fetch reviews:', response.status);
-          setReviews([]);
-        }
+        const data = await getMyReviews();
+        // A API retorna paginação, pegar os dados
+        setReviews(data.data || []);
       } catch (error) {
-        console.error('Erro ao buscar reviews:', error);
+        console.error('Failed to fetch reviews:', (error as any).status || error);
         setReviews([]);
       } finally {
         setReviewsLoading(false);

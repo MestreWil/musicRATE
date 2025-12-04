@@ -7,17 +7,32 @@ export default function AuthCallbackPage() {
   const sp = useSearchParams();
 
   useEffect(() => {
-    // After backend sets cookies, redirect to original target
+    const token = sp.get('token');
     const returnTo = sp.get('return_to') || '/';
-    
-    // Dispatch a custom event to notify auth hooks that login completed
-    window.dispatchEvent(new CustomEvent('auth:login'));
-    
-    const delay = setTimeout(() => {
-      router.replace(returnTo);
-    }, 600);
-    return () => clearTimeout(delay);
-  }, [router, sp]);
+
+    console.log('🔑 Callback received token:', token);
+    console.log('📍 Return to:', returnTo);
+
+    if (token) {
+      // Salvar token no localStorage
+      localStorage.setItem('sanctum_token', token);
+      console.log('✅ Token saved to localStorage');
+      
+      // Verificar se foi salvo
+      const saved = localStorage.getItem('sanctum_token');
+      console.log('🔍 Token verification:', saved ? 'Found' : 'NOT FOUND');
+      
+      // Dispatch event to notify auth hooks
+      window.dispatchEvent(new CustomEvent('auth:login'));
+      
+      // Usar router do Next.js em vez de window.location para evitar hard reload
+      console.log('🚀 Redirecting to:', returnTo);
+      router.push(returnTo);
+    } else {
+      console.error('❌ No token received, redirecting to login');
+      router.push('/login');
+    }
+  }, [sp, router]);
 
   return (
     <div className="min-h-[calc(100vh-80px)] grid place-items-center bg-neutral-950 text-neutral-200">

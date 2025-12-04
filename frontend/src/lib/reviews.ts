@@ -3,20 +3,23 @@
 import { apiGet, apiPost, apiDelete } from './api';
 
 export interface Review {
-  id: number;
-  user_id: number;
-  spotify_album_id: string;
+  id: string;
+  user_id: string;
+  target_type: 'album' | 'track' | 'single';
+  target_spotify_id: string;
+  spotify_album_id?: string;
   album_name?: string;
   artist_name?: string;
   album_image_url?: string;
   rating: number;
-  review_text?: string;
+  review_text?: string | null;
   created_at: string;
   updated_at: string;
   user?: {
-    id: number;
+    id: string;
     display_name: string;
     email: string;
+    avatar_url?: string;
   };
 }
 
@@ -46,7 +49,8 @@ export interface AlbumReviewsResponse {
 }
 
 export interface CreateReviewData {
-  spotify_album_id: string;
+  target_type: 'album' | 'track' | 'single';
+  target_spotify_id: string;
   rating: number;
   review_text?: string;
 }
@@ -72,7 +76,7 @@ export async function getAllReviews(page = 1, perPage = 15): Promise<{
 /**
  * Obtém detalhes de uma review
  */
-export async function getReview(id: number): Promise<Review> {
+export async function getReview(id: string): Promise<Review> {
   return apiGet(`/reviews/${id}`);
 }
 
@@ -116,7 +120,7 @@ export async function createReview(data: CreateReviewData): Promise<{
 /**
  * Atualiza uma review existente (requer autenticação)
  */
-export async function updateReview(id: number, data: UpdateReviewData): Promise<{
+export async function updateReview(id: string, data: UpdateReviewData): Promise<{
   message: string;
   review: Review;
 }> {
@@ -126,7 +130,7 @@ export async function updateReview(id: number, data: UpdateReviewData): Promise<
 /**
  * Deleta uma review (requer autenticação)
  */
-export async function deleteReview(id: number): Promise<{
+export async function deleteReview(id: string): Promise<{
   message: string;
 }> {
   return apiDelete(`/reviews/${id}`);

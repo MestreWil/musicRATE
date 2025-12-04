@@ -24,18 +24,41 @@ export function useAuth() {
 
   const checkAuth = async () => {
     try {
+      const token = localStorage.getItem('sanctum_token');
+      
+      console.log('🔐 useAuth: Checking authentication...');
+      console.log('🔑 Token from localStorage:', token ? `${token.substring(0, 20)}...` : 'NULL');
+      
+      if (!token) {
+        console.log('❌ No token found');
+        setAuthState({
+          authenticated: false,
+          user: null,
+          loading: false,
+        });
+        return;
+      }
+
       const baseUrl = process.env.NEXT_PUBLIC_BACKEND_API_BASE_URL || 'http://127.0.0.1:8000/api';
+      console.log('🌐 Calling:', `${baseUrl}/auth/me`);
+      
       const response = await fetch(`${baseUrl}/auth/me`, {
         method: 'GET',
-        credentials: 'include', // Important: send cookies with request
         headers: {
+          'Authorization': `Bearer ${token}`,
           'Accept': 'application/json',
         },
+        cache: 'no-store',
       });
+
+      console.log('📡 Response status:', response.status);
 
       if (response.ok) {
         const data = await response.json();
+        console.log('📦 Response data:', data);
+        
         if (data.authenticated && data.user) {
+          console.log('✅ User authenticated:', data.user.name);
           setAuthState({
             authenticated: true,
             user: data.user,
@@ -45,14 +68,17 @@ export function useAuth() {
         }
       }
 
-      // Not authenticated
+      // Token inválido, remover
+      console.warn('⚠️ Token invalid, removing...');
+      localStorage.removeItem('sanctum_token');
       setAuthState({
         authenticated: false,
         user: null,
         loading: false,
       });
     } catch (error) {
-      console.error('Auth check failed:', error);
+      console.error('❌ Auth check failed:', error);
+      localStorage.removeItem('sanctum_token');
       setAuthState({
         authenticated: false,
         user: null,
@@ -73,8 +99,36 @@ export function useAuth() {
     return () => window.removeEventListener('auth:login', handleAuthLogin);
   }, []);
 
+  const logout = async () => {
+    try {
+      const token = localStorage.getItem('sanctum_token');
+      
+      if (token) {
+        const baseUrl = process.env.NEXT_PUBLIC_BACKEND_API_BASE_URL || 'http://127.0.0.1:8000/api';
+        await fetch(`${baseUrl}/auth/logout`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json',
+          },
+        });
+      }
+    } catch (error) {
+      console.error('Logout failed:', error);
+    } finally {
+      localStorage.removeItem('sanctum_token');
+      setAuthState({
+        authenticated: false,
+        user: null,
+        loading: false,
+      });
+      window.location.href = '/';
+    }
+  };
+
   return {
     ...authState,
+    logout,
     refetch: checkAuth, // Allow manual refetch after login
   };
 }

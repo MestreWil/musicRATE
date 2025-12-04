@@ -112,7 +112,10 @@ class AuthController extends Controller
                 ]
             );
 
-            // Armazenar token na sessão
+            // Criar token Sanctum para o usuário
+            $token = $user->createToken('spotify-auth')->plainTextToken;
+
+            // Armazenar token na sessão (fallback)
             $request->session()->put('spotify_token', [
                 'access_token' => $data['access_token'],
                 'refresh_token' => $data['refresh_token'] ?? null,
@@ -120,30 +123,32 @@ class AuthController extends Controller
                 'user_id' => $user->id,
             ]);
 
-            // Também armazenar no cache como fallback
+            // Armazenar no cache
             $cacheKey = self::TOKEN_CACHE_PREFIX . $user->id;
             Cache::put($cacheKey, [
                 'access_token' => $data['access_token'],
                 'refresh_token' => $data['refresh_token'] ?? null,
                 'expires_at' => now()->addSeconds($data['expires_in']),
+                'sanctum_token' => $token,
             ], $data['expires_in']);
 
             Log::info('User authenticated successfully', [
                 'user_id' => $user->id,
-                'spotify_id' => $user->spotify_id
+                'spotify_id' => $user->spotify_id,
+                'has_sanctum_token' => !empty($token)
             ]);
 
             // Recuperar return_to da sessão
             $returnTo = $request->session()->get('oauth_return_to', '/');
             $request->session()->forget('oauth_return_to');
 
-            // Redirecionar para o frontend com return_to preservado
+            // Redirecionar para o frontend com token
             $frontendUrl = config('app.frontend_url', 'http://localhost:3000');
-            $callbackUrl = $frontendUrl . '/auth/callback';
+            $callbackUrl = $frontendUrl . '/auth/callback?token=' . urlencode($token);
             
             // Adicionar return_to como query parameter
             if ($returnTo && $returnTo !== '/') {
-                $callbackUrl .= '?return_to=' . urlencode($returnTo);
+                $callbackUrl .= '&return_to=' . urlencode($returnTo);
             }
             
             return redirect()->away($callbackUrl);
@@ -203,13 +208,17 @@ class AuthController extends Controller
 
     public function logout(Request $request): JsonResponse
     {
+        // Revogar token Sanctum
+        $request->user()?->currentAccessToken()?->delete();
+        
         // Limpar sessão
         $request->session()->forget('spotify_token');
         
-        // Limpar cache também
-        $userId = $request->user()?->id ?? 'guest_' . $request->ip();
-        $cacheKey = self::TOKEN_CACHE_PREFIX . $userId;
-        Cache::forget($cacheKey);
+        // Limpar cache
+        if ($request->user()) {
+            $cacheKey = self::TOKEN_CACHE_PREFIX . $request->user()->id;
+            Cache::forget($cacheKey);
+        }
 
         return response()->json([
             'message' => 'Logout realizado com sucesso'
@@ -221,109 +230,26 @@ class AuthController extends Controller
      */
     public function me(Request $request): JsonResponse
     {
-        // Log para debug
-        Log::info('Auth check', [
-            'session_id' => $request->session()->getId(),
-            'has_session_token' => $request->session()->has('spotify_token'),
-            'ip' => $request->ip(),
-            'user_agent' => $request->userAgent(),
+        // Verificar autenticação via Sanctum
+        $user = $request->user();
+        
+        if (!$user) {
+            return response()->json([
+                'authenticated' => false,
+                'user' => null
+            ]);
+        }
+
+        // Retornar dados do usuário
+        return response()->json([
+            'authenticated' => true,
+            'user' => [
+                'id' => $user->spotify_id,
+                'name' => $user->display_name,
+                'email' => $user->email,
+                'avatar' => $user->avatar_url,
+            ]
         ]);
-
-        // Tentar obter token da sessão primeiro
-        $tokenData = $request->session()->get('spotify_token');
-
-        // Se não tiver na sessão, tentar cache (fallback)
-        if (!$tokenData) {
-            $userId = $request->user()?->id ?? 'guest_' . $request->ip();
-            $cacheKey = self::TOKEN_CACHE_PREFIX . $userId;
-            $tokenData = Cache::get($cacheKey);
-            
-            if ($tokenData) {
-                Log::info('Token found in cache, restoring to session', [
-                    'cache_key' => $cacheKey
-                ]);
-                // Restaurar na sessão se encontrado no cache
-                $request->session()->put('spotify_token', $tokenData);
-            }
-        }
-
-        if (!$tokenData || !isset($tokenData['access_token'])) {
-            Log::info('No token data found');
-            return response()->json([
-                'authenticated' => false,
-                'user' => null
-            ]);
-        }
-
-        // Verificar se o token expirou
-        if (isset($tokenData['expires_at'])) {
-            $expiresAt = is_string($tokenData['expires_at']) 
-                ? \Carbon\Carbon::parse($tokenData['expires_at'])
-                : $tokenData['expires_at'];
-                
-            if ($expiresAt->isPast()) {
-                // Token expirado, limpar sessão
-                $request->session()->forget('spotify_token');
-                return response()->json([
-                    'authenticated' => false,
-                    'user' => null
-                ]);
-            }
-        }
-
-        // Buscar usuário do banco se tiver user_id na sessão
-        if (isset($tokenData['user_id'])) {
-            $user = \App\Models\User::find($tokenData['user_id']);
-            
-            if ($user) {
-                return response()->json([
-                    'authenticated' => true,
-                    'user' => [
-                        'id' => $user->spotify_id,
-                        'name' => $user->display_name,
-                        'email' => $user->email,
-                        'avatar' => $user->avatar_url,
-                    ]
-                ]);
-            }
-        }
-
-        // Fallback: buscar dados do usuário do Spotify usando o token
-        try {
-            $response = Http::withToken($tokenData['access_token'])
-                ->get('https://api.spotify.com/v1/me');
-
-            if ($response->successful()) {
-                $spotifyUser = $response->json();
-                
-                return response()->json([
-                    'authenticated' => true,
-                    'user' => [
-                        'id' => $spotifyUser['id'],
-                        'name' => $spotifyUser['display_name'] ?? $spotifyUser['id'],
-                        'email' => $spotifyUser['email'] ?? null,
-                        'avatar' => $spotifyUser['images'][0]['url'] ?? null,
-                    ]
-                ]);
-            }
-
-            // Token inválido ou expirado
-            $request->session()->forget('spotify_token');
-            return response()->json([
-                'authenticated' => false,
-                'user' => null
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Error fetching Spotify user data', [
-                'message' => $e->getMessage()
-            ]);
-
-            return response()->json([
-                'authenticated' => false,
-                'user' => null
-            ]);
-        }
     }
 
     /**
