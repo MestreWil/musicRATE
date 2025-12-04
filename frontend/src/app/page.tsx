@@ -1,3 +1,7 @@
+// Força renderização dinâmica para evitar erro de build
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 import { getNewReleases, searchAlbums, searchArtists, getCategories } from '@/lib/spotify';
 import { GenreBadge } from '@/components/GenreBadge';
 import { HorizontalScroll } from '@/components/HorizontalScroll';
