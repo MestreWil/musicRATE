@@ -19,20 +19,23 @@ class ReviewObserver
         // Get review author info
         $authorName = $review->user->display_name ?? $review->user->email ?? 'Um usuário';
 
+        // Determine target name based on type
+        $targetName = $review->target_type === 'artist' ? $review->artist_name : $review->album_name;
+
         // Create notification for each follower
         foreach ($followers as $follower) {
             Notification::create([
                 'id' => Str::uuid(),
                 'user_id' => $follower->id,
                 'type' => 'review_posted',
-                'message' => "{$authorName} publicou uma nova review de {$review->target_name}",
+                'message' => "{$authorName} publicou uma nova review de {$targetName}",
                 'data' => [
                     'review_id' => $review->id,
                     'author_id' => $review->user_id,
                     'author_name' => $authorName,
                     'target_type' => $review->target_type,
                     'target_id' => $review->target_spotify_id,
-                    'target_name' => $review->target_name,
+                    'target_name' => $targetName,
                     'rating' => $review->rating,
                 ],
                 'read' => 'N',
