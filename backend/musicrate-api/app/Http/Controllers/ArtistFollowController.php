@@ -16,6 +16,15 @@ class ArtistFollowController extends Controller
     {
         $user = $request->user();
 
+        // Get artist info from Spotify
+        $spotifyService = app(SpotifyService::class);
+        $artistData = null;
+        try {
+            $artistData = $spotifyService->getArtist($artistSpotifyId);
+        } catch (\Exception $e) {
+            \Log::error('Error fetching artist info when following', ['error' => $e->getMessage()]);
+        }
+
         // Check if already following
         $existingFollow = ArtistFollow::where('user_id', $user->id)
             ->where('artist_spotify_id', $artistSpotifyId)
@@ -29,13 +38,20 @@ class ArtistFollowController extends Controller
                 ], 200);
             }
             // Reactivate follow
-            $existingFollow->update(['active' => 'Y']);
+            $existingFollow->active = 'Y';
+            if ($artistData) {
+                $existingFollow->artist_name = $artistData['name'] ?? null;
+                $existingFollow->artist_image_url = isset($artistData['images'][0]['url']) ? $artistData['images'][0]['url'] : null;
+            }
+            $existingFollow->save();
         } else {
             // Create new follow
             ArtistFollow::create([
                 'id' => Str::uuid(),
                 'user_id' => $user->id,
                 'artist_spotify_id' => $artistSpotifyId,
+                'artist_name' => $artistData ? ($artistData['name'] ?? null) : null,
+                'artist_image_url' => $artistData && isset($artistData['images'][0]['url']) ? $artistData['images'][0]['url'] : null,
                 'active' => 'Y',
             ]);
         }
@@ -95,27 +111,59 @@ class ArtistFollowController extends Controller
             ->where('active', 'Y')
             ->get();
 
-        // Get artist details from Spotify
         $spotifyService = app(SpotifyService::class);
         $artistsWithDetails = [];
 
         foreach ($follows as $follow) {
-            try {
-                $artistData = $spotifyService->getArtist($follow->artist_spotify_id);
+            // Use cached data from database if available
+            if ($follow->artist_name && $follow->artist_image_url) {
                 $artistsWithDetails[] = [
                     'spotify_artist_id' => $follow->artist_spotify_id,
-                    'artist_name' => $artistData['name'] ?? 'Unknown Artist',
-                    'artist_image_url' => $artistData['images'][0]['url'] ?? null,
+                    'artist_name' => $follow->artist_name,
+                    'artist_image_url' => $follow->artist_image_url,
                     'followed_at' => $follow->created_at,
                 ];
-            } catch (\Exception $e) {
-                // If artist not found on Spotify, include basic info
-                $artistsWithDetails[] = [
-                    'spotify_artist_id' => $follow->artist_spotify_id,
-                    'artist_name' => 'Unknown Artist',
-                    'artist_image_url' => null,
-                    'followed_at' => $follow->created_at,
-                ];
+            } else {
+                // Fetch from Spotify if not cached
+                try {
+                    $artistData = $spotifyService->getArtist($follow->artist_spotify_id);
+                    
+                    if ($artistData) {
+                        $artistName = $artistData['name'] ?? 'Unknown Artist';
+                        $artistImage = isset($artistData['images'][0]['url']) ? $artistData['images'][0]['url'] : null;
+                        
+                        // Update cache in database
+                        $follow->update([
+                            'artist_name' => $artistName,
+                            'artist_image_url' => $artistImage
+                        ]);
+                        
+                        $artistsWithDetails[] = [
+                            'spotify_artist_id' => $follow->artist_spotify_id,
+                            'artist_name' => $artistName,
+                            'artist_image_url' => $artistImage,
+                            'followed_at' => $follow->created_at,
+                        ];
+                    } else {
+                        $artistsWithDetails[] = [
+                            'spotify_artist_id' => $follow->artist_spotify_id,
+                            'artist_name' => 'Unknown Artist',
+                            'artist_image_url' => null,
+                            'followed_at' => $follow->created_at,
+                        ];
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('Error fetching artist from Spotify', [
+                        'artist_id' => $follow->artist_spotify_id,
+                        'error' => $e->getMessage()
+                    ]);
+                    $artistsWithDetails[] = [
+                        'spotify_artist_id' => $follow->artist_spotify_id,
+                        'artist_name' => 'Unknown Artist',
+                        'artist_image_url' => null,
+                        'followed_at' => $follow->created_at,
+                    ];
+                }
             }
         }
 

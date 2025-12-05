@@ -18,6 +18,8 @@ class ArtistFollow extends Model
     protected $fillable = [
         'user_id',
         'artist_spotify_id',
+        'artist_name',
+        'artist_image_url',
         'active',
     ];
 
