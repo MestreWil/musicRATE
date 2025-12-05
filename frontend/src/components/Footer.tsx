@@ -36,22 +36,17 @@ export function Footer() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 text-sm">
           <div>
             <h3 className="text-neutral-400 mb-2">Call Us</h3>
-            <p>(55) 55555 - 5555</p>
-            <p>(55) 55555 - 5555</p>
+            <p>(51) 98484-4424</p>
+            <p>(92) 98147-1090</p>
           </div>
           <div>
             <h3 className="text-neutral-400 mb-2">Infos</h3>
             <p>About us</p>
-            <p>(55) 5555 - 5555</p>
+            <p>Porto Alegre, RS - Brazil</p>
           </div>
           <div>
             <h3 className="text-neutral-400 mb-2">E-mail Us</h3>
             <p>musicrate@gmail.com</p>
-          </div>
-          <div>
-            <h3 className="text-neutral-400 mb-2">lorem ipsum</h3>
-            <p>------  --------</p>
-            <p>------  --------</p>
           </div>
         </div>
 
