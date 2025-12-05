@@ -34,6 +34,9 @@ export function AlbumActionsBar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="flex items-center gap-4">
           <button 
+            onClick={() => {
+              alert('Prévia de áudio não disponível para esta faixa.\n\nO Spotify pode restringir previews em algumas regiões ou para certas músicas.');
+            }}
             className="flex items-center justify-center w-14 h-14 rounded-full bg-red-600 hover:bg-red-700 hover:scale-105 transition-all shadow-lg"
             aria-label="Play album"
           >
