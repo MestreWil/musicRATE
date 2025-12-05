@@ -51,19 +51,26 @@ export function Navbar() {
 
   const handleLogout = async () => {
     try {
+      const token = localStorage.getItem('sanctum_token');
       const baseUrl = config.apiUrl;
-      await fetch(`${baseUrl}/auth/logout`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Accept': 'application/json',
-        },
-      });
-      // Recarregar a página para limpar o estado
-      window.location.href = '/';
+      
+      if (token) {
+        await fetch(`${baseUrl}/auth/logout`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json',
+          },
+        });
+      }
     } catch (error) {
       console.error('Logout failed:', error);
-      // Mesmo com erro, redirecionar para home
+    } finally {
+      // Limpar localStorage sempre, mesmo com erro
+      localStorage.removeItem('sanctum_token');
+      localStorage.removeItem('user_data');
+      // Recarregar a página para limpar o estado
       window.location.href = '/';
     }
   };

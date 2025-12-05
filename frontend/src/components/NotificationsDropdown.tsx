@@ -153,7 +153,7 @@ export function NotificationsDropdown() {
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute right-0 md:right-0 left-0 md:left-auto mt-2 w-full md:w-96 mx-4 md:mx-0 bg-neutral-900 border border-neutral-800 rounded-lg shadow-xl z-50 max-h-[600px] flex flex-col">
+        <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] sm:w-96 max-w-md bg-neutral-900 border border-neutral-800 rounded-lg shadow-xl z-50 max-h-[600px] flex flex-col">
           {/* Header */}
           <div className="p-4 border-b border-neutral-800 flex items-center justify-between">
             <h3 className="text-lg font-semibold text-white">Notificações</h3>
