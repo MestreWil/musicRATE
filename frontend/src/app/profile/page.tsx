@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { UserReviewCard } from '@/components/UserReviewCard';
 import { getMyReviews, Review } from '@/lib/reviews';
 import { apiGet } from '@/lib/api';
+import { FollowersModal } from '@/components/FollowersModal';
 
 export default function UserProfilePage() {
   const { authenticated, user, loading } = useAuth();
@@ -17,6 +18,9 @@ export default function UserProfilePage() {
   const [reviewsLoading, setReviewsLoading] = useState(true);
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
+  const [isFollowModalOpen, setIsFollowModalOpen] = useState(false);
+  const [followModalType, setFollowModalType] = useState<'followers' | 'following'>('followers');
+  const [copySuccess, setCopySuccess] = useState(false);
 
   // Function to fetch followers/following counts
   const fetchCounts = async () => {
@@ -191,14 +195,26 @@ export default function UserProfilePage() {
                       <span className="font-semibold text-neutral-100">{reviews.length}</span>
                       <span className="text-neutral-400 ml-1">reviews</span>
                     </div>
-                    <div>
+                    <button
+                      onClick={() => {
+                        setFollowModalType('followers');
+                        setIsFollowModalOpen(true);
+                      }}
+                      className="hover:text-red-400 transition-colors"
+                    >
                       <span className="font-semibold text-neutral-100">{followersCount}</span>
                       <span className="text-neutral-400 ml-1">followers</span>
-                    </div>
-                    <div>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setFollowModalType('following');
+                        setIsFollowModalOpen(true);
+                      }}
+                      className="hover:text-red-400 transition-colors"
+                    >
                       <span className="font-semibold text-neutral-100">{followingCount}</span>
                       <span className="text-neutral-400 ml-1">following</span>
-                    </div>
+                    </button>
                   </div>
                 </div>
 
@@ -207,8 +223,16 @@ export default function UserProfilePage() {
                   <button className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-100 rounded-lg text-sm font-medium transition-colors">
                     Edit Profile
                   </button>
-                  <button className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-sm font-medium transition-colors">
-                    Share Profile
+                  <button 
+                    onClick={() => {
+                      const profileUrl = `${window.location.origin}/profile/${user.id}`;
+                      navigator.clipboard.writeText(profileUrl);
+                      setCopySuccess(true);
+                      setTimeout(() => setCopySuccess(false), 2000);
+                    }}
+                    className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-sm font-medium transition-colors relative"
+                  >
+                    {copySuccess ? '✓ Copiado!' : 'Share Profile'}
                   </button>
                 </div>
               </div>
@@ -302,6 +326,14 @@ export default function UserProfilePage() {
           </div>
         )}
       </section>
+
+      {/* Followers/Following Modal */}
+      <FollowersModal
+        isOpen={isFollowModalOpen}
+        onClose={() => setIsFollowModalOpen(false)}
+        userId={user.id}
+        type={followModalType}
+      />
     </div>
   );
 }
