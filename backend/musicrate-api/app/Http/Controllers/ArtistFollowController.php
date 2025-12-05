@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ArtistFollow;
+use App\Services\SpotifyService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -94,12 +95,33 @@ class ArtistFollowController extends Controller
             ->where('active', 'Y')
             ->get();
 
+        // Get artist details from Spotify
+        $spotifyService = app(SpotifyService::class);
+        $artistsWithDetails = [];
+
+        foreach ($follows as $follow) {
+            try {
+                $artistData = $spotifyService->getArtist($follow->artist_spotify_id);
+                $artistsWithDetails[] = [
+                    'spotify_artist_id' => $follow->artist_spotify_id,
+                    'artist_name' => $artistData['name'] ?? 'Unknown Artist',
+                    'artist_image_url' => $artistData['images'][0]['url'] ?? null,
+                    'followed_at' => $follow->created_at,
+                ];
+            } catch (\Exception $e) {
+                // If artist not found on Spotify, include basic info
+                $artistsWithDetails[] = [
+                    'spotify_artist_id' => $follow->artist_spotify_id,
+                    'artist_name' => 'Unknown Artist',
+                    'artist_image_url' => null,
+                    'followed_at' => $follow->created_at,
+                ];
+            }
+        }
+
         return response()->json([
-            'artists' => $follows->map(fn($f) => [
-                'artist_spotify_id' => $f->artist_spotify_id,
-                'followed_at' => $f->created_at,
-            ]),
-            'count' => $follows->count()
+            'artists' => $artistsWithDetails,
+            'count' => count($artistsWithDetails)
         ], 200);
     }
 }

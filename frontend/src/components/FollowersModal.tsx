@@ -7,10 +7,10 @@ import { apiGet } from '@/lib/api';
 
 interface UserFollow {
   id: string;
-  name: string;
-  username?: string;
-  avatar?: string | null;
-  created_at: string;
+  display_name: string;
+  spotify_id?: string;
+  avatar_url?: string | null;
+  created_at?: string;
 }
 
 interface ArtistFollow {
@@ -48,7 +48,7 @@ export function FollowersModal({ isOpen, onClose, userId, type }: FollowersModal
           // Following pode ser usuários e artistas
           const [usersData, artistsData] = await Promise.all([
             apiGet<{ following: UserFollow[] }>(`/users/${userId}/following`).catch(() => ({ following: [] })),
-            apiGet<{ artists: ArtistFollow[] }>(`/users/${userId}/following-artists`).catch(() => ({ artists: [] }))
+            apiGet<{ artists: ArtistFollow[] }>(`/users/${userId}/artists`).catch(() => ({ artists: [] }))
           ]);
           setUsers(usersData.following || []);
           setArtists(artistsData.artists || []);
@@ -140,26 +140,26 @@ export function FollowersModal({ isOpen, onClose, userId, type }: FollowersModal
                   className="flex items-center gap-3 p-3 hover:bg-neutral-800/50 rounded-lg transition-colors group"
                 >
                   <div className="relative w-12 h-12 rounded-full overflow-hidden bg-neutral-800 flex-shrink-0">
-                    {user.avatar ? (
+                    {user.avatar_url ? (
                       <Image
-                        src={user.avatar}
-                        alt={user.name}
+                        src={user.avatar_url}
+                        alt={user.display_name}
                         fill
                         sizes="48px"
                         className="object-cover"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-lg text-neutral-600">
-                        {user.name.charAt(0).toUpperCase()}
+                        {user.display_name.charAt(0).toUpperCase()}
                       </div>
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-white group-hover:text-red-400 transition-colors truncate">
-                      {user.name}
+                      {user.display_name}
                     </p>
                     <p className="text-sm text-neutral-500 truncate">
-                      @{user.username || user.name.toLowerCase().replace(/\s+/g, '')}
+                      @{user.spotify_id || user.display_name.toLowerCase().replace(/\s+/g, '')}
                     </p>
                   </div>
                   <svg className="w-5 h-5 text-neutral-600 group-hover:text-neutral-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
